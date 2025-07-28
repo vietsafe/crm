@@ -1,0 +1,341 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2677.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px Courier; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px Courier; -webkit-text-stroke: #000000; min-height: 16.0px}
+    span.s1 {font-kerning: none}
+  </style>
+</head>
+<body>
+<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;html lang="vi"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;head&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;CRM Supabase&lt;/title&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav { background: #394867; color: #fff; padding: 10px 20px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav ul { list-style: none; margin: 0; padding: 0; display: flex; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav li { margin-right: 15px; cursor: pointer; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav li:hover { text-decoration: underline; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.container { padding: 20px; background: #fff; margin: 20px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>h2, h3, h4 { margin-top: 0; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>th { background: #efefef; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.button { padding: 6px 12px; margin-right: 5px; background: #4CAF50; color: white; border: none; border-radius:4px; cursor: pointer; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.button.delete { background: #f44336; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.button.secondary { background: #2196F3; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.hidden { display: none; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.form-group { margin-bottom: 10px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.form-group label { display: block; margin-bottom: 4px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px; box-sizing: border-box; border-radius:4px; border:1px solid #ccc; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.suggestions { position: absolute; background: #fff; border: 1px solid #ccc; border-radius:4px; width: 100%; max-height: 150px; overflow-y: auto; box-shadow:0 2px 4px rgba(0,0,0,0.1); z-index: 1000; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.suggestions div { padding: 6px 8px; cursor: pointer; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.suggestions div:hover { background: #f0f0f0; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>#quote-items-table th, #quote-items-table td { text-align:center; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>#quote-items-table tfoot td { font-weight: bold; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"&gt;&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
+<p class="p1"><span class="s1">&lt;body&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;nav&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;ul&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('dashboard')"&gt;Dashboard&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('customers')"&gt;Customers&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('services')"&gt;Services&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('projects')"&gt;Projects&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('opportunities')"&gt;Opportunities&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('quotes')"&gt;Quotes&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('contracts')"&gt;Contracts&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="doSignOut()"&gt;Đăng xuất&lt;/li&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/ul&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/nav&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="content" class="container"&gt;&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Khởi tạo Supabase</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const SUPABASE_URL = 'https://oqzynnrpkykbegydugcw.supabase.co';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xenlubnJwa3lrYmVneWR1Z2N3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2MDU5ODUsImV4cCI6MjA2OTE4MTk4NX0.Qcei-rbXV3uSuknEIUq3N8G6Y0L1ui8UWYDFQA-IMy0';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let quotes = [], customers = [], opportunities = [], services = [];</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Load chung</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function loadData() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>[customers, opportunities, services, quotes] = await Promise.all([</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('customers').select('*').then(r=&gt;r.data),</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('opportunities').select('*').then(r=&gt;r.data),</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('services').select('*').then(r=&gt;r.data),</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('quotes').select('*').then(r=&gt;r.data),</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>]);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Điều hướng</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function showPage(page) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('content').innerHTML = '';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (page === 'quotes') renderQuotesPage();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// [Các page khác...]</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// PAGE Quotes</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function renderQuotesPage() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const c = document.getElementById('content');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>c.innerHTML = `</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h2&gt;Quotes&lt;/h2&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button" onclick="openQuoteForm()"&gt;Thêm báo giá&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="quote-form" class="hidden"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="quote-list"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadData().then(renderQuoteList);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function renderQuoteList() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const list = document.getElementById('quote-list');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>list.innerHTML = `</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;table&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;thead&gt;&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;th&gt;ID&lt;/th&gt;&lt;th&gt;Client&lt;/th&gt;&lt;th&gt;Opp&lt;/th&gt;&lt;th&gt;Amount&lt;/th&gt;&lt;th&gt;Status&lt;/th&gt;&lt;th&gt;Act&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/tr&gt;&lt;/thead&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;tbody&gt;${quotes.map(q=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const c = customers.find(x=&gt;x.id===q.customer_id)?.name||q.customer_id;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return `&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${q.quotes_id}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${c}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${q.opportunity_id||''}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${(q.amount||0).toLocaleString()}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${q.status||''}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;button class="button" onclick="openQuoteForm('${q.quotes_id}')"&gt;Sửa&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;button class="button delete" onclick="deleteQuote('${q.quotes_id}')"&gt;Xóa&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/tr&gt;`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}).join('')}&lt;/tbody&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/table&gt;`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function openQuoteForm(id='') {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const isEdit = !!id;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const q = quotes.find(x=&gt;x.quotes_id===id) || {};</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').innerHTML = `</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h3&gt;${isEdit?'Sửa':'Thêm'} báo giá&lt;/h3&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;ID&lt;/label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input disabled value="${isEdit?q.quotes_id:generateQuoteId()}"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Client&lt;/label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input id="q_client" oninput="suggestCustomer(this.value)" value="${customers.find(c=&gt;c.id===q.customer_id)?.name||''}"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div id="q_client_sugs" class="suggestions hidden"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input type="hidden" id="q_client_id" value="${q.customer_id||''}"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Opportunity&lt;/label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input id="q_opp" oninput="suggestOpp(this.value)" value="${q.opportunity_id||''}"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div id="q_opp_sugs" class="suggestions hidden"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h4&gt;Quote Items&lt;/h4&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;table id="quote-items-table"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;thead&gt;&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;th&gt;No&lt;/th&gt;&lt;th&gt;Mã DV&lt;/th&gt;&lt;th&gt;Dịch vụ&lt;/th&gt;&lt;th&gt;Số lượng&lt;/th&gt;&lt;th&gt;Đơn giá&lt;/th&gt;&lt;th&gt;Thành tiền&lt;/th&gt;&lt;th&gt;Act&lt;/th&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/tr&gt;&lt;/thead&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;tbody id="qi_list"&gt;&lt;/tbody&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;tfoot&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;tr&gt;&lt;td colspan="5" style="text-align:right"&gt;Tổng&lt;/td&gt;&lt;td id="qi_total"&gt;0&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/tfoot&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/table&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button secondary" onclick="addQuoteItemForm()"&gt;Thêm hàng&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Status&lt;/label&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;select id="q_status"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='nháp'?' selected':''}&gt;nháp&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='đã gửi'?' selected':''}&gt;đã gửi&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='chấp nhận'?' selected':''}&gt;chấp nhận&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='từ chối'?' selected':''}&gt;từ chối&lt;/option&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/select&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button" onclick="${isEdit?`updateQuote('${id}')`:'addQuote()'}"&gt;Lưu&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button secondary" onclick="document.getElementById('quote-form').classList.add('hidden')"&gt;Huỷ&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').classList.remove('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadQuoteItems(id);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function loadQuoteItems(qid) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { data, error } = await supabase.from('quote_items').select('*').eq('quote_id', qid);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error){ alert(error.message); return; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const tbody = document.getElementById('qi_list');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let total = 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>tbody.innerHTML = data.map((i, idx) =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>total += i.amount;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>return `&lt;tr&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${idx+1}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.service_id}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${services.find(s=&gt;s.services_id===i.service_id)?.name||''}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.quantity}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.unit_price.toLocaleString()}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.amount.toLocaleString()}&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;button class="button delete" onclick="deleteQuoteItem('${i.quote_items_id}','${qid}')"&gt;Xóa&lt;/button&gt;&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/tr&gt;`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}).join('');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('qi_total').textContent = total.toLocaleString();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// Cập nhật tổng lên quotes</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await supabase.from('quotes').update({ amount: total }).eq('quotes_id', qid);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function addQuoteItemForm() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const tbody = document.getElementById('qi_list');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const idx = Date.now();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>tbody.insertAdjacentHTML('beforeend', `</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;tr id="qi_row_${idx}"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;-&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;input type="hidden" id="qi_service_${idx}_id"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;input id="qi_service_${idx}" oninput="suggestService(this.value,'${idx}')" autocomplete="off"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;div id="qi_service_${idx}_sugs" class="suggestions hidden"&gt;&lt;/div&gt;&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;input type="number" id="qi_qty_${idx}" value="1" style="width:60px"&gt;&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;input type="number" id="qi_price_${idx}" value="0" style="width:80px"&gt;&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;-&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button class="button" onclick="saveQuoteItem('${idx}')"&gt;Lưu&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button class="button delete" onclick="document.getElementById('qi_row_${idx}').remove()"&gt;Hủy&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/td&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/tr&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>`);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function saveQuoteItem(idx) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const qid = document.querySelector('#quote-form input[disabled]').value;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const sid = document.getElementById(`qi_service_${idx}_id`).value;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!sid) return alert('Chưa chọn dịch vụ');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const qty = parseInt(document.getElementById(`qi_qty_${idx}`).value,10)||0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const up<span class="Apple-converted-space">  </span>= parseInt(document.getElementById(`qi_price_${idx}`).value,10)||0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// Kiểm trùng</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { data: existing } = await supabase.from('quote_items')</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.select('*').eq('quote_id', qid).eq('service_id', sid);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(existing.length) return alert('Dịch vụ đã tồn tại trong báo giá này.');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const amt = qty*up;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { error } = await supabase.from('quote_items').insert([{ quote_id:qid, service_id:sid, quantity:qty, unit_price:up, amount:amt }]);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error) return alert(error.message);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadQuoteItems(qid);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function deleteQuoteItem(qi, qid) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!confirm('Xóa hàng?')) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await supabase.from('quote_items').delete().eq('quote_items_id', qi);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadQuoteItems(qid);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function addQuote() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const id = document.querySelector('#quote-form input[disabled]').value;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { error } = await supabase.from('quotes').insert([{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>quotes_id:id,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>customer_id:document.getElementById('q_client_id').value,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>opportunity_id:document.getElementById('q_opp').value||null,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>description:null,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>status:document.getElementById('q_status').value,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>created_at:new Date().toISOString()</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}]);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error) return alert(error.message);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function updateQuote(id) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { error } = await supabase.from('quotes').update({</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>customer_id:document.getElementById('q_client_id').value,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>opportunity_id:document.getElementById('q_opp').value||null,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>status:document.getElementById('q_status').value</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}).eq('quotes_id',id);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error) return alert(error.message);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function deleteQuote(id) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!confirm('Xóa báo giá?')) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await supabase.from('quotes').delete().eq('quotes_id',id);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Autocomplete helpers</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function suggestCustomer(q) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const box = document.getElementById('q_client_sugs');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.innerHTML = '';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!q) return box.classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>customers.filter(c=&gt;c.name.toLowerCase().includes(q.toLowerCase())).forEach(c=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const d = document.createElement('div');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.textContent = `${c.id} – ${c.name}`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.onclick = ()=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>document.getElementById('q_client').value = c.name;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>document.getElementById('q_client_id').value = c.id;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>box.classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>box.append(d);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.classList.remove('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function suggestOpp(q) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const box = document.getElementById('q_opp_sugs');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.innerHTML = '';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!q) return box.classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>opportunities.filter(o=&gt;o.opportunity_id.includes(q)).forEach(o=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const d = document.createElement('div');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.textContent = o.opportunity_id;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.onclick = ()=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>document.getElementById('q_opp').value = o.opportunity_id;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>box.classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>box.append(d);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.classList.remove('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function suggestService(q, idx) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const box = document.getElementById(`qi_service_${idx}_sugs`);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.innerHTML = '';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!q) return box.classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>services.filter(s=&gt;s.name.toLowerCase().includes(q.toLowerCase())||s.services_id.includes(q))</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.forEach(s=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>const d = document.createElement('div');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>d.textContent = `${s.services_id} – ${s.name}`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>d.onclick = ()=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.getElementById(`qi_service_${idx}`).value = s.name;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.getElementById(`qi_service_${idx}_id`).value = s.services_id;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>box.classList.add('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>};</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>box.append(d);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.classList.remove('hidden');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// khi click ra ngoài, ẩn tất cả suggestions</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>document.addEventListener('click', e=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!e.target.closest('.suggestions') &amp;&amp; !e.target.closest('input')) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.querySelectorAll('.suggestions').forEach(b=&gt;b.classList.add('hidden'));</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>});</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ID Generator ví dụ</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function generateQuoteId() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const y = new Date().getFullYear().toString().slice(-2),</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>w = ('0'+(Math.ceil((new Date()-new Date(new Date().getFullYear(),0,1))/86400000/7))).slice(-2);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let used = quotes.filter(q=&gt;q.quotes_id.startsWith(`Q_${y}${w}`))</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                       </span>.map(q=&gt;parseInt(q.quotes_id.slice(6),10)).sort((a,b)=&gt;a-b);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>for(let i=1;i&lt;100;i++) if(!used.includes(i)) return `Q_${y}${w}`+('0'+i).slice(-2);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return `Q_${y}${w}99`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Khởi tạo ban đầu</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>(async()=&gt;{</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>showPage('quotes');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>})();</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+</body>
+</html>
