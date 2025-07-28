@@ -1,341 +1,1723 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!doctype html>
+<html lang="vi">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2677.6">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px Courier; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 13.0px Courier; -webkit-text-stroke: #000000; min-height: 16.0px}
-    span.s1 {font-kerning: none}
+  <!-- =========================================================
+       CRM Bootstrap Full – Single HTML
+       Modules: Dashboard, Customers, Services, Projects,
+                Opportunities, Quotes (+Quote Items), Contracts, Users
+       UI: Bootstrap 5, Sidebar (Admin Dashboard)
+       DB: Supabase (PostgreSQL). Cần thay SUPABASE_URL/ANON_KEY bên dưới.
+       ========================================================= -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <title>CRM • Supabase • Bootstrap Admin</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous">
+  <!-- Bootstrap Icons (optional) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"/>
+
+  <!-- Supabase JS v2 (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <style>
+    /* =========================
+       CUSTOM STYLE (nhẹ) – dùng Bootstrap là chính
+       ========================= */
+    html, body { height: 100%; background-color: #f8f9fa; }
+    .sidebar {
+      width: 280px; min-height: 100vh;
+      position: sticky; top: 0; left: 0;
+      border-right: 1px solid #e9ecef; background:#ffffff;
+    }
+    .sidebar .nav-link {
+      border-radius: .5rem; color: #334155;
+    }
+    .sidebar .nav-link.active,
+    .sidebar .nav-link:hover {
+      background-color: #e7f1ff; color: #0d6efd;
+    }
+    .content-wrap {
+      margin-left: 0;
+    }
+    @media (min-width: 992px) {
+      .content-wrap { margin-left: 280px; }
+      .sidebar { position: fixed; }
+    }
+
+    .card-shadow {
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+      border: 1px solid #eef2f7;
+      border-radius: 1rem;
+    }
+
+    /* Autocomplete suggestions */
+    .suggestions {
+      position: absolute; z-index: 1050; /* trên card */
+      background: #fff; border: 1px solid #e5e7eb; border-radius: .5rem;
+      max-height: 260px; overflow-y: auto; width: 100%;
+      box-shadow: 0 10px 22px rgba(0,0,0,.08);
+    }
+    .suggestion-item { padding: .5rem .75rem; cursor: pointer; }
+    .suggestion-item:hover { background: #f5f7fb; }
+
+    /* Bảng Quote Items căn giữa */
+    #quote-items-table th, #quote-items-table td { text-align: center; }
+    #quote-items-table tfoot td { font-weight: 700; }
+
+    .section-anchor {
+      scroll-margin-top: 80px;
+    }
+  
+    /* Auth overlay */
+    .auth-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:rgba(15,23,42,.55);backdrop-filter:blur(2px);z-index:3000;}
+    .auth-card{width:420px;border-radius:1rem;box-shadow:0 20px 40px rgba(0,0,0,.2);}
+
   </style>
 </head>
 <body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;html lang="vi"&gt;</span></p>
-<p class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;CRM Supabase&lt;/title&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav { background: #394867; color: #fff; padding: 10px 20px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav ul { list-style: none; margin: 0; padding: 0; display: flex; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav li { margin-right: 15px; cursor: pointer; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>nav li:hover { text-decoration: underline; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.container { padding: 20px; background: #fff; margin: 20px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>h2, h3, h4 { margin-top: 0; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>th { background: #efefef; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.button { padding: 6px 12px; margin-right: 5px; background: #4CAF50; color: white; border: none; border-radius:4px; cursor: pointer; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.button.delete { background: #f44336; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.button.secondary { background: #2196F3; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.hidden { display: none; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.form-group { margin-bottom: 10px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.form-group label { display: block; margin-bottom: 4px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px; box-sizing: border-box; border-radius:4px; border:1px solid #ccc; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.suggestions { position: absolute; background: #fff; border: 1px solid #ccc; border-radius:4px; width: 100%; max-height: 150px; overflow-y: auto; box-shadow:0 2px 4px rgba(0,0,0,0.1); z-index: 1000; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.suggestions div { padding: 6px 8px; cursor: pointer; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.suggestions div:hover { background: #f0f0f0; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>#quote-items-table th, #quote-items-table td { text-align:center; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>#quote-items-table tfoot td { font-weight: bold; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;nav&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;ul&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('dashboard')"&gt;Dashboard&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('customers')"&gt;Customers&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('services')"&gt;Services&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('projects')"&gt;Projects&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('opportunities')"&gt;Opportunities&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('quotes')"&gt;Quotes&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="showPage('contracts')"&gt;Contracts&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;li onclick="doSignOut()"&gt;Đăng xuất&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/ul&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/nav&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="content" class="container"&gt;&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Khởi tạo Supabase</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const SUPABASE_URL = 'https://oqzynnrpkykbegydugcw.supabase.co';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xenlubnJwa3lrYmVneWR1Z2N3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2MDU5ODUsImV4cCI6MjA2OTE4MTk4NX0.Qcei-rbXV3uSuknEIUq3N8G6Y0L1ui8UWYDFQA-IMy0';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>let quotes = [], customers = [], opportunities = [], services = [];</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Load chung</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function loadData() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>[customers, opportunities, services, quotes] = await Promise.all([</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('customers').select('*').then(r=&gt;r.data),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('opportunities').select('*').then(r=&gt;r.data),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('services').select('*').then(r=&gt;r.data),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>supabase.from('quotes').select('*').then(r=&gt;r.data),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>]);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Điều hướng</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function showPage(page) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('content').innerHTML = '';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (page === 'quotes') renderQuotesPage();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// [Các page khác...]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// PAGE Quotes</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function renderQuotesPage() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const c = document.getElementById('content');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>c.innerHTML = `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h2&gt;Quotes&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button" onclick="openQuoteForm()"&gt;Thêm báo giá&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="quote-form" class="hidden"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div id="quote-list"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadData().then(renderQuoteList);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function renderQuoteList() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const list = document.getElementById('quote-list');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>list.innerHTML = `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;table&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;thead&gt;&lt;tr&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;th&gt;ID&lt;/th&gt;&lt;th&gt;Client&lt;/th&gt;&lt;th&gt;Opp&lt;/th&gt;&lt;th&gt;Amount&lt;/th&gt;&lt;th&gt;Status&lt;/th&gt;&lt;th&gt;Act&lt;/th&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/tr&gt;&lt;/thead&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;tbody&gt;${quotes.map(q=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const c = customers.find(x=&gt;x.id===q.customer_id)?.name||q.customer_id;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>return `&lt;tr&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${q.quotes_id}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${c}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${q.opportunity_id||''}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${(q.amount||0).toLocaleString()}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;${q.status||''}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;button class="button" onclick="openQuoteForm('${q.quotes_id}')"&gt;Sửa&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;button class="button delete" onclick="deleteQuote('${q.quotes_id}')"&gt;Xóa&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/tr&gt;`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}).join('')}&lt;/tbody&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/table&gt;`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function openQuoteForm(id='') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const isEdit = !!id;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const q = quotes.find(x=&gt;x.quotes_id===id) || {};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').innerHTML = `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h3&gt;${isEdit?'Sửa':'Thêm'} báo giá&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;ID&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input disabled value="${isEdit?q.quotes_id:generateQuoteId()}"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Client&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input id="q_client" oninput="suggestCustomer(this.value)" value="${customers.find(c=&gt;c.id===q.customer_id)?.name||''}"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div id="q_client_sugs" class="suggestions hidden"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input type="hidden" id="q_client_id" value="${q.customer_id||''}"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Opportunity&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;input id="q_opp" oninput="suggestOpp(this.value)" value="${q.opportunity_id||''}"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div id="q_opp_sugs" class="suggestions hidden"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;h4&gt;Quote Items&lt;/h4&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;table id="quote-items-table"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;thead&gt;&lt;tr&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;th&gt;No&lt;/th&gt;&lt;th&gt;Mã DV&lt;/th&gt;&lt;th&gt;Dịch vụ&lt;/th&gt;&lt;th&gt;Số lượng&lt;/th&gt;&lt;th&gt;Đơn giá&lt;/th&gt;&lt;th&gt;Thành tiền&lt;/th&gt;&lt;th&gt;Act&lt;/th&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/tr&gt;&lt;/thead&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;tbody id="qi_list"&gt;&lt;/tbody&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;tfoot&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;tr&gt;&lt;td colspan="5" style="text-align:right"&gt;Tổng&lt;/td&gt;&lt;td id="qi_total"&gt;0&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/tfoot&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/table&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button secondary" onclick="addQuoteItemForm()"&gt;Thêm hàng&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Status&lt;/label&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;select id="q_status"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='nháp'?' selected':''}&gt;nháp&lt;/option&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='đã gửi'?' selected':''}&gt;đã gửi&lt;/option&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='chấp nhận'?' selected':''}&gt;chấp nhận&lt;/option&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;option${q.status==='từ chối'?' selected':''}&gt;từ chối&lt;/option&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/select&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button" onclick="${isEdit?`updateQuote('${id}')`:'addQuote()'}"&gt;Lưu&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button class="button secondary" onclick="document.getElementById('quote-form').classList.add('hidden')"&gt;Huỷ&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').classList.remove('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadQuoteItems(id);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function loadQuoteItems(qid) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { data, error } = await supabase.from('quote_items').select('*').eq('quote_id', qid);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error){ alert(error.message); return; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const tbody = document.getElementById('qi_list');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let total = 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>tbody.innerHTML = data.map((i, idx) =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>total += i.amount;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>return `&lt;tr&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${idx+1}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.service_id}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${services.find(s=&gt;s.services_id===i.service_id)?.name||''}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.quantity}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.unit_price.toLocaleString()}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;${i.amount.toLocaleString()}&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;button class="button delete" onclick="deleteQuoteItem('${i.quote_items_id}','${qid}')"&gt;Xóa&lt;/button&gt;&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/tr&gt;`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}).join('');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('qi_total').textContent = total.toLocaleString();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// Cập nhật tổng lên quotes</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await supabase.from('quotes').update({ amount: total }).eq('quotes_id', qid);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function addQuoteItemForm() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const tbody = document.getElementById('qi_list');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const idx = Date.now();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>tbody.insertAdjacentHTML('beforeend', `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;tr id="qi_row_${idx}"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;-&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;input type="hidden" id="qi_service_${idx}_id"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;input id="qi_service_${idx}" oninput="suggestService(this.value,'${idx}')" autocomplete="off"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>&lt;div id="qi_service_${idx}_sugs" class="suggestions hidden"&gt;&lt;/div&gt;&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;input type="number" id="qi_qty_${idx}" value="1" style="width:60px"&gt;&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;&lt;input type="number" id="qi_price_${idx}" value="0" style="width:80px"&gt;&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;-&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button class="button" onclick="saveQuoteItem('${idx}')"&gt;Lưu&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;button class="button delete" onclick="document.getElementById('qi_row_${idx}').remove()"&gt;Hủy&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;/td&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/tr&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>`);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function saveQuoteItem(idx) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const qid = document.querySelector('#quote-form input[disabled]').value;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const sid = document.getElementById(`qi_service_${idx}_id`).value;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!sid) return alert('Chưa chọn dịch vụ');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const qty = parseInt(document.getElementById(`qi_qty_${idx}`).value,10)||0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const up<span class="Apple-converted-space">  </span>= parseInt(document.getElementById(`qi_price_${idx}`).value,10)||0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>// Kiểm trùng</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { data: existing } = await supabase.from('quote_items')</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.select('*').eq('quote_id', qid).eq('service_id', sid);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(existing.length) return alert('Dịch vụ đã tồn tại trong báo giá này.');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const amt = qty*up;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { error } = await supabase.from('quote_items').insert([{ quote_id:qid, service_id:sid, quantity:qty, unit_price:up, amount:amt }]);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error) return alert(error.message);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadQuoteItems(qid);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function deleteQuoteItem(qi, qid) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!confirm('Xóa hàng?')) return;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await supabase.from('quote_items').delete().eq('quote_items_id', qi);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>loadQuoteItems(qid);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function addQuote() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const id = document.querySelector('#quote-form input[disabled]').value;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { error } = await supabase.from('quotes').insert([{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>quotes_id:id,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>customer_id:document.getElementById('q_client_id').value,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>opportunity_id:document.getElementById('q_opp').value||null,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>description:null,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>status:document.getElementById('q_status').value,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>created_at:new Date().toISOString()</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}]);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error) return alert(error.message);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function updateQuote(id) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const { error } = await supabase.from('quotes').update({</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>customer_id:document.getElementById('q_client_id').value,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>opportunity_id:document.getElementById('q_opp').value||null,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>status:document.getElementById('q_status').value</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}).eq('quotes_id',id);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(error) return alert(error.message);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>document.getElementById('quote-form').classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function deleteQuote(id) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!confirm('Xóa báo giá?')) return;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await supabase.from('quotes').delete().eq('quotes_id',id);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData(); renderQuoteList();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Autocomplete helpers</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function suggestCustomer(q) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const box = document.getElementById('q_client_sugs');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.innerHTML = '';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!q) return box.classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>customers.filter(c=&gt;c.name.toLowerCase().includes(q.toLowerCase())).forEach(c=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const d = document.createElement('div');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.textContent = `${c.id} – ${c.name}`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.onclick = ()=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>document.getElementById('q_client').value = c.name;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>document.getElementById('q_client_id').value = c.id;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>box.classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>box.append(d);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.classList.remove('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function suggestOpp(q) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const box = document.getElementById('q_opp_sugs');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.innerHTML = '';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!q) return box.classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>opportunities.filter(o=&gt;o.opportunity_id.includes(q)).forEach(o=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const d = document.createElement('div');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.textContent = o.opportunity_id;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>d.onclick = ()=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>document.getElementById('q_opp').value = o.opportunity_id;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>box.classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>box.append(d);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.classList.remove('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function suggestService(q, idx) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const box = document.getElementById(`qi_service_${idx}_sugs`);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.innerHTML = '';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!q) return box.classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>services.filter(s=&gt;s.name.toLowerCase().includes(q.toLowerCase())||s.services_id.includes(q))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.forEach(s=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>const d = document.createElement('div');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>d.textContent = `${s.services_id} – ${s.name}`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>d.onclick = ()=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.getElementById(`qi_service_${idx}`).value = s.name;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>document.getElementById(`qi_service_${idx}_id`).value = s.services_id;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>box.classList.add('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>box.append(d);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>box.classList.remove('hidden');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// khi click ra ngoài, ẩn tất cả suggestions</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>document.addEventListener('click', e=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if(!e.target.closest('.suggestions') &amp;&amp; !e.target.closest('input')) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.querySelectorAll('.suggestions').forEach(b=&gt;b.classList.add('hidden'));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>});</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// ID Generator ví dụ</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function generateQuoteId() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const y = new Date().getFullYear().toString().slice(-2),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>w = ('0'+(Math.ceil((new Date()-new Date(new Date().getFullYear(),0,1))/86400000/7))).slice(-2);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>let used = quotes.filter(q=&gt;q.quotes_id.startsWith(`Q_${y}${w}`))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                       </span>.map(q=&gt;parseInt(q.quotes_id.slice(6),10)).sort((a,b)=&gt;a-b);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>for(let i=1;i&lt;100;i++) if(!used.includes(i)) return `Q_${y}${w}`+('0'+i).slice(-2);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return `Q_${y}${w}99`;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Khởi tạo ban đầu</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>(async()=&gt;{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>await loadData();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>showPage('quotes');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>})();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+
+  <!-- ===== AUTH OVERLAY (Google + whitelist user_profiles) ===== -->
+  <div id="authOverlay" class="auth-overlay d-none">
+    <div class="card auth-card">
+      <div class="card-body text-center p-4">
+        <div class="mb-3">
+          <i class="bi bi-shield-lock" style="font-size:2.5rem;"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Đăng nhập VSEC CRM</h5>
+        <p class="text-muted small mb-4">Chỉ chấp nhận email nằm trong bảng <code>user_profiles</code> và <code>active = true</code>.</p>
+        <button id="btnGoogle" class="btn btn-dark w-100 mb-2">
+          <i class="bi bi-google me-2"></i>Đăng nhập với Google
+        </button>
+        <div id="authError" class="text-danger small mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================= SIDEBAR ========================= -->
+  <aside class="sidebar p-3">
+    <a class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+      <span class="fs-5 fw-bold">
+        <i class="bi bi-layout-text-sidebar-reverse me-2"></i>CRM Admin
+      </span>
+    </a>
+    <hr>
+    <ul class="nav nav-pills flex-column gap-1" id="sidebarNav">
+      <li class="nav-item"><a class="nav-link active" data-page="dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="customers"><i class="bi bi-people me-2"></i>Customers</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="services"><i class="bi bi-box-seam me-2"></i>Services</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="projects"><i class="bi bi-kanban me-2"></i>Projects</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="opportunities"><i class="bi bi-bullseye me-2"></i>Opportunities</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="quotes"><i class="bi bi-receipt me-2"></i>Quotes</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="contracts"><i class="bi bi-file-earmark-text me-2"></i>Contracts</a></li>
+      <li class="nav-item"><a class="nav-link" data-page="users" id="navUsers"><i class="bi bi-person-gear me-2"></i>Users</a></li>
+    </ul>
+    <hr>
+    <div class="dropdown">
+      <a class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="https://ui-avatars.com/api/?name=CRM&background=0D6EFD&color=fff" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong id="currentEmail">guest@local</strong>
+      </a>
+      <ul class="dropdown-menu shadow">
+        <li><a class="dropdown-item" href="#" id="btnSignOut"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ========================= MAIN CONTENT ========================= -->
+  <main class="content-wrap">
+    <div class="container-fluid py-4">
+
+      <!-- ============== SECTION: DASHBOARD ============== -->
+      <section id="page-dashboard" class="section-anchor">
+        <!-- HEADER -->
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="row g-4">
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-shadow">
+              <div class="card-body">
+                <h6 class="text-secondary text-uppercase mb-1">Customers</h6>
+                <h2 class="fw-bold mb-0" id="kpiCustomers">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-shadow">
+              <div class="card-body">
+                <h6 class="text-secondary text-uppercase mb-1">Services</h6>
+                <h2 class="fw-bold mb-0" id="kpiServices">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-shadow">
+              <div class="card-body">
+                <h6 class="text-secondary text-uppercase mb-1">Projects</h6>
+                <h2 class="fw-bold mb-0" id="kpiProjects">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card card-shadow">
+              <div class="card-body">
+                <h6 class="text-secondary text-uppercase mb-1">Opportunities</h6>
+                <h2 class="fw-bold mb-0" id="kpiOpportunities">0</h2>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXTRA -->
+        <div class="card card-shadow mt-4">
+          <div class="card-body">
+            <div class="text-secondary">Tổng giá trị cơ hội:
+              <span class="fw-bold" id="kpiOppValue">0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: CUSTOMERS ============== -->
+      <section id="page-customers" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-people me-2"></i>Customers</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddCustomer">
+              <i class="bi bi-plus-lg me-1"></i>Thêm khách hàng
+            </button>
+          </div>
+        </div>
+
+        <div id="customerFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Contact</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Tax</th>
+                  <th style="width:120px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customerTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: SERVICES ============== -->
+      <section id="page-services" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-box-seam me-2"></i>Services</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddService">
+              <i class="bi bi-plus-lg me-1"></i>Thêm dịch vụ
+            </button>
+          </div>
+        </div>
+
+        <div id="serviceFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Tên dịch vụ</th>
+                  <th>Đơn giá</th>
+                  <th>Mô tả</th>
+                  <th style="width:120px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="serviceTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: PROJECTS ============== -->
+      <section id="page-projects" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-kanban me-2"></i>Projects</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddProject">
+              <i class="bi bi-plus-lg me-1"></i>Thêm dự án
+            </button>
+          </div>
+        </div>
+
+        <div id="projectFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Tên dự án</th>
+                  <th>Khách hàng</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Status</th>
+                  <th style="width:120px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="projectTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: OPPORTUNITIES ============== -->
+      <section id="page-opportunities" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-bullseye me-2"></i>Opportunities</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddOpportunity">
+              <i class="bi bi-plus-lg me-1"></i>Thêm cơ hội
+            </button>
+          </div>
+        </div>
+
+        <div id="oppFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Tên cơ hội</th>
+                  <th>Khách hàng</th>
+                  <th>Giá trị</th>
+                  <th>Stage</th>
+                  <th style="width:120px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="oppTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: QUOTES ============== -->
+      <section id="page-quotes" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-receipt me-2"></i>Quotes</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddQuote">
+              <i class="bi bi-plus-lg me-1"></i>Thêm báo giá
+            </button>
+          </div>
+        </div>
+
+        <div id="quoteFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Khách hàng</th>
+                  <th>Cơ hội</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th style="width:140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="quoteTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: CONTRACTS ============== -->
+      <section id="page-contracts" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-file-earmark-text me-2"></i>Contracts</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddContract">
+              <i class="bi bi-plus-lg me-1"></i>Thêm hợp đồng
+            </button>
+          </div>
+        </div>
+
+        <div id="contractFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Dự án</th>
+                  <th>Khách hàng</th>
+                  <th>Giá trị</th>
+                  <th>Status</th>
+                  <th style="width:140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contractTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== SECTION: USERS ============== -->
+      <section id="page-users" class="section-anchor d-none">
+        <div class="d-flex align-items-center mb-4">
+          <h1 class="h3 mb-0"><i class="bi bi-person-gear me-2"></i>Users</h1>
+          <div class="ms-auto">
+            <button class="btn btn-primary" id="btnAddUser">
+              <i class="bi bi-plus-lg me-1"></i>Thêm user
+            </button>
+          </div>
+        </div>
+
+        <div id="userFormWrap" class="d-none"></div>
+
+        <div class="card card-shadow">
+          <div class="card-body table-responsive">
+            <table class="table table-hover table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Active</th>
+                  <th style="width:140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="userTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================= SCRIPTS ========================= -->
+  <script>
+    /* ============================================================
+       0) CẤU HÌNH SUPABASE
+       ============================================================ */
+    const SUPABASE_URL = 'https://sdmjdhmkjyadgyfodpsf.supabase.co'; // TODO: thay thế
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbWpkaG1ranlhZGd5Zm9kcHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2ODQyNjIsImV4cCI6MjA2OTI2MDI2Mn0.Org3PD8CNmqCxC8ylbNiPA5Guo0w0srXgxyF2s2ZHG0';               // TODO: thay thế
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    /* ============================================================
+       1) BIẾN TRẠNG THÁI ỨNG DỤNG
+       ============================================================ */
+    let currentUser = { email: null, role: 'user' }; // demo; khi cần auth thật thì gọi sb.auth
+    let customers = [], services = [], projects = [], opportunities = [], quotes = [], contracts = [], users = [];
+
+    /* ============================================================
+       2) HÀM TIỆN ÍCH
+       ============================================================ */
+    const pad = (n, w) => (n+'').padStart(w,'0');
+
+    function getWeekNumber(date = new Date()) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function generateCustomerId() {
+      const used = customers.map(c => parseInt((c.id||'').slice(1),10)).filter(Number.isFinite);
+      for (let i=1;i<10000;i++) if (!used.includes(i)) return 'C'+pad(i,4);
+      throw new Error('Hết mã khách hàng');
+    }
+    function generateServiceId() {
+      const used = services.map(s => parseInt((s.services_id||'').split('_')[1],10)).filter(Number.isFinite);
+      for (let i=1;i<100000;i++) if (!used.includes(i)) return 'S_'+pad(i,5);
+      throw new Error('Hết mã dịch vụ');
+    }
+    function generateProjectId() {
+      const y = new Date().getFullYear().toString().slice(-2);
+      const used = projects.filter(p => (p.project_id||'').startsWith('P_'+y)).map(p=>parseInt(p.project_id.slice(4),10)).filter(Number.isFinite);
+      for (let i=1;i<1000;i++) if (!used.includes(i)) return 'P_'+y+pad(i,3);
+      throw new Error('Hết mã dự án');
+    }
+    function generateOpportunityId() {
+      const used = opportunities.map(o => parseInt((o.opportunity_id||'').split('_')[1],10)).filter(Number.isFinite);
+      for (let i=1;i<100000;i++) if (!used.includes(i)) return 'Op_'+pad(i,5);
+      throw new Error('Hết mã cơ hội');
+    }
+    function generateQuoteId() {
+      const now = new Date();
+      const y = now.getFullYear().toString().slice(-2);
+      const w = pad(getWeekNumber(now),2);
+      const used = quotes
+        .filter(q => (q.quotes_id||'').startsWith(`Q_${y}${w}`))
+        .map(q => parseInt(q.quotes_id.slice(6),10))
+        .filter(Number.isFinite);
+      for (let i=1;i<=99;i++) if (!used.includes(i)) return `Q_${y}${w}${pad(i,2)}`;
+      throw new Error('Hết mã báo giá');
+    }
+    function generateContractId() {
+      const now = new Date();
+      const y = now.getFullYear().toString().slice(-2);
+      const w = pad(getWeekNumber(now),2);
+      const used = contracts
+        .filter(c => (c.contract_id||'').startsWith(`HD_${y}${w}`))
+        .map(c => parseInt(c.contract_id.slice(7),10))
+        .filter(Number.isFinite);
+      for (let i=1;i<=99;i++) if (!used.includes(i)) return `HD_${y}${w}${pad(i,2)}`;
+      throw new Error('Hết mã hợp đồng');
+    }
+
+    function money(n){ return (n||0).toLocaleString('vi-VN'); }
+
+    function showSection(page) {
+      document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('d-none'));
+      document.getElementById(`page-${page}`).classList.remove('d-none');
+      document.querySelectorAll('.sidebar .nav-link').forEach(a => {
+        if (a.dataset.page === page) a.classList.add('active'); else a.classList.remove('active');
+      });
+    }
+
+    function setKPIs(){
+      document.getElementById('kpiCustomers').textContent = customers.length;
+      document.getElementById('kpiServices').textContent  = services.length;
+      document.getElementById('kpiProjects').textContent  = projects.length;
+      document.getElementById('kpiOpportunities').textContent = opportunities.length;
+      const totalVal = opportunities.reduce((s,o)=>s+(o.expected_value||0),0);
+      document.getElementById('kpiOppValue').textContent = money(totalVal) + ' đ';
+    }
+
+    // Ẩn tất cả suggestion khi click ngoài
+    document.addEventListener('click', (e)=>{
+      if (!e.target.closest('.suggestions') && !e.target.closest('input')) {
+        document.querySelectorAll('.suggestions').forEach(b => b.classList.add('d-none'));
+      }
+    });
+
+    /* ============================================================
+       3) LOAD DATA
+       ============================================================ */
+    async function loadAll() {
+      const rs = await Promise.all([
+        sb.from('customers').select('*').order('id'),
+        sb.from('services').select('*').order('services_id'),
+        sb.from('projects').select('*').order('project_id'),
+        sb.from('opportunities').select('*').order('opportunity_id'),
+        sb.from('quotes').select('*').order('quotes_id'),
+        sb.from('contracts').select('*').order('contract_id'),
+        sb.from('user_profiles').select('*')
+      ]);
+      customers     = rs[0].data || [];
+      services      = rs[1].data || [];
+      projects      = rs[2].data || [];
+      opportunities = rs[3].data || [];
+      quotes        = rs[4].data || [];
+      contracts     = rs[5].data || [];
+      users         = rs[6].data || [];
+    }
+
+    /* ============================================================
+       4) DASHBOARD RENDER
+       ============================================================ */
+    function renderDashboard(){
+      setKPIs();
+    }
+
+    /* ============================================================
+       5) CUSTOMERS MODULE
+       ============================================================ */
+    function renderCustomers(){
+      const tbody = document.getElementById('customerTbody');
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td>${c.id}</td>
+          <td class="text-start">${c.name||''}</td>
+          <td>${c.contact_person||''}</td>
+          <td>${c.phone||''}</td>
+          <td>${c.email||''}</td>
+          <td>${c.tax_code||''}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openCustomerForm('${c.id}')">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('${c.id}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openCustomerForm(id=''){
+      const wrap = document.getElementById('customerFormWrap');
+      const isEdit = !!id;
+      const c = isEdit ? customers.find(x=>x.id===id) : {};
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} khách hàng</h5>
+            <div class="row g-3">
+              <div class="col-md-2">
+                <label class="form-label">ID</label>
+                <input class="form-control" disabled id="cust_id" value="${isEdit?c.id:generateCustomerId()}">
+              </div>
+              <div class="col-md-10">
+                <label class="form-label">Tên khách hàng</label>
+                <input class="form-control" id="cust_name" value="${c?.name||''}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Người liên hệ</label>
+                <input class="form-control" id="cust_contact" value="${c?.contact_person||''}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Phone</label>
+                <input class="form-control" id="cust_phone" value="${c?.phone||''}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input class="form-control" id="cust_email" value="${c?.email||''}">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Địa chỉ</label>
+                <input class="form-control" id="cust_address" value="${c?.address||''}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Mã số thuế</label>
+                <input class="form-control" id="cust_tax" value="${c?.tax_code||''}">
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateCustomer('${id}')`:'addCustomer()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('customerFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addCustomer(){
+      const payload = {
+        id: document.getElementById('cust_id').value,
+        name: document.getElementById('cust_name').value.trim(),
+        contact_person: document.getElementById('cust_contact').value || null,
+        phone: document.getElementById('cust_phone').value || null,
+        email: document.getElementById('cust_email').value || null,
+        address: document.getElementById('cust_address').value || null,
+        tax_code: document.getElementById('cust_tax').value || null,
+        created_at: new Date().toISOString()
+      };
+      if(!payload.name) return alert('Tên khách hàng không được trống');
+      const {error} = await sb.from('customers').insert([payload]);
+      if(error) return alert(error.message);
+      await loadAll(); renderCustomers(); renderDashboard();
+      document.getElementById('customerFormWrap').classList.add('d-none');
+    }
+
+    async function updateCustomer(id){
+      const payload = {
+        name: document.getElementById('cust_name').value.trim(),
+        contact_person: document.getElementById('cust_contact').value || null,
+        phone: document.getElementById('cust_phone').value || null,
+        email: document.getElementById('cust_email').value || null,
+        address: document.getElementById('cust_address').value || null,
+        tax_code: document.getElementById('cust_tax').value || null,
+      };
+      if(!payload.name) return alert('Tên khách hàng không được trống');
+      const {error} = await sb.from('customers').update(payload).eq('id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderCustomers(); renderDashboard();
+      document.getElementById('customerFormWrap').classList.add('d-none');
+    }
+
+    async function deleteCustomer(id){
+      if(!confirm('Xóa khách hàng?')) return;
+      const {error} = await sb.from('customers').delete().eq('id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderCustomers(); renderDashboard();
+    }
+
+    /* ============================================================
+       6) SERVICES MODULE
+       ============================================================ */
+    function renderServices(){
+      const tbody = document.getElementById('serviceTbody');
+      tbody.innerHTML = services.map(s => `
+        <tr>
+          <td>${s.services_id}</td>
+          <td class="text-start">${s.name||''}</td>
+          <td>${money(s.unit_price)}</td>
+          <td class="text-start">${s.description||''}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openServiceForm('${s.services_id}')">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteService('${s.services_id}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openServiceForm(id=''){
+      const wrap = document.getElementById('serviceFormWrap');
+      const isEdit = !!id;
+      const s = isEdit ? services.find(x=>x.services_id===id) : {};
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} dịch vụ</h5>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">ID</label>
+                <input class="form-control" disabled id="sv_id" value="${isEdit?s.services_id:generateServiceId()}">
+              </div>
+              <div class="col-md-9">
+                <label class="form-label">Tên dịch vụ</label>
+                <input class="form-control" id="sv_name" value="${s?.name||''}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Đơn giá</label>
+                <input type="number" class="form-control" id="sv_price" value="${s?.unit_price||0}">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Mô tả</label>
+                <textarea class="form-control" rows="2" id="sv_desc">${s?.description||''}</textarea>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateService('${id}')`:'addService()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('serviceFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addService(){
+      const name = document.getElementById('sv_name').value.trim();
+      if(!name) return alert('Tên dịch vụ không được trống');
+      // chống trùng theo tên
+      if (services.find(x => x.name.toLowerCase() === name.toLowerCase()))
+        return alert('Tên dịch vụ đã tồn tại.');
+
+      const payload = {
+        services_id: document.getElementById('sv_id').value,
+        name,
+        unit_price: parseInt(document.getElementById('sv_price').value||'0',10),
+        description: document.getElementById('sv_desc').value || null,
+        created_at: new Date().toISOString()
+      };
+      const {error} = await sb.from('services').insert([payload]);
+      if(error) {
+        if (/unique/i.test(error.message)) return alert('Tên dịch vụ đã tồn tại.');
+        return alert(error.message);
+      }
+      await loadAll(); renderServices(); renderDashboard();
+      document.getElementById('serviceFormWrap').classList.add('d-none');
+    }
+
+    async function updateService(id){
+      const name = document.getElementById('sv_name').value.trim();
+      if(!name) return alert('Tên dịch vụ không được trống');
+      if (services.find(x => x.services_id!==id && x.name.toLowerCase()===name.toLowerCase()))
+        return alert('Tên dịch vụ đã tồn tại.');
+
+      const payload = {
+        name,
+        unit_price: parseInt(document.getElementById('sv_price').value||'0',10),
+        description: document.getElementById('sv_desc').value || null
+      };
+      const {error} = await sb.from('services').update(payload).eq('services_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderServices(); renderDashboard();
+      document.getElementById('serviceFormWrap').classList.add('d-none');
+    }
+
+    async function deleteService(id){
+      if(!confirm('Xóa dịch vụ?')) return;
+      const {error} = await sb.from('services').delete().eq('services_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderServices(); renderDashboard();
+    }
+
+    /* ============================================================
+       7) PROJECTS MODULE (+suggest customer)
+       ============================================================ */
+    function renderProjects(){
+      const tbody = document.getElementById('projectTbody');
+      tbody.innerHTML = projects.map(p => {
+        const c = customers.find(x=>x.id===p.customer_id);
+        return `
+          <tr>
+            <td>${p.project_id}</td>
+            <td class="text-start">${p.project_name||''}</td>
+            <td class="text-start">${c?c.name:p.customer_id}</td>
+            <td>${p.start_date||''}</td>
+            <td>${p.end_date||''}</td>
+            <td>${p.status||''}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openProjectForm('${p.project_id}')">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteProject('${p.project_id}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openProjectForm(id=''){
+      const wrap = document.getElementById('projectFormWrap');
+      const isEdit = !!id;
+      const p = isEdit ? projects.find(x=>x.project_id===id) : {};
+      const cust = customers.find(c=>c.id===p?.customer_id);
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} dự án</h5>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">ID</label>
+                <input class="form-control" disabled id="pr_id" value="${isEdit?p.project_id:generateProjectId()}">
+              </div>
+              <div class="col-md-9">
+                <label class="form-label">Tên dự án</label>
+                <input class="form-control" id="pr_name" value="${p?.project_name||''}">
+              </div>
+              <div class="col-md-6 position-relative">
+                <label class="form-label">Khách hàng</label>
+                <input class="form-control" id="pr_client" autocomplete="off"
+                       value="${cust?.name||''}"
+                       oninput="suggestCustomer(this.value,'pr_client')">
+                <div id="pr_client_sugs" class="suggestions d-none"></div>
+                <input type="hidden" id="pr_client_id" value="${p?.customer_id||''}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Start</label>
+                <input type="date" class="form-control" id="pr_start" value="${p?.start_date||''}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">End</label>
+                <input type="date" class="form-control" id="pr_end" value="${p?.end_date||''}">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="pr_status">
+                  <option${p?.status==='Chuẩn bị'?' selected':''}>Chuẩn bị</option>
+                  <option${p?.status==='Đang triển khai'?' selected':''}>Đang triển khai</option>
+                  <option${p?.status==='Hoàn thành'?' selected':''}>Hoàn thành</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Mô tả</label>
+                <textarea class="form-control" rows="2" id="pr_desc">${p?.description||''}</textarea>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateProject('${id}')`:'addProject()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('projectFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addProject(){
+      const payload = {
+        project_id: document.getElementById('pr_id').value,
+        project_name: document.getElementById('pr_name').value.trim(),
+        customer_id: document.getElementById('pr_client_id').value,
+        description: document.getElementById('pr_desc').value || null,
+        start_date: document.getElementById('pr_start').value || null,
+        end_date: document.getElementById('pr_end').value || null,
+        status: document.getElementById('pr_status').value,
+        created_at: new Date().toISOString()
+      };
+      if(!payload.project_name) return alert('Tên dự án không được trống');
+      if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+      const {error} = await sb.from('projects').insert([payload]);
+      if(error) return alert(error.message);
+      await loadAll(); renderProjects(); renderDashboard();
+      document.getElementById('projectFormWrap').classList.add('d-none');
+    }
+
+    async function updateProject(id){
+      const payload = {
+        project_name: document.getElementById('pr_name').value.trim(),
+        customer_id: document.getElementById('pr_client_id').value,
+        description: document.getElementById('pr_desc').value || null,
+        start_date: document.getElementById('pr_start').value || null,
+        end_date: document.getElementById('pr_end').value || null,
+        status: document.getElementById('pr_status').value
+      };
+      if(!payload.project_name) return alert('Tên dự án không được trống');
+      if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+      const {error} = await sb.from('projects').update(payload).eq('project_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderProjects(); renderDashboard();
+      document.getElementById('projectFormWrap').classList.add('d-none');
+    }
+
+    async function deleteProject(id){
+      if(!confirm('Xóa dự án?')) return;
+      const {error} = await sb.from('projects').delete().eq('project_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderProjects(); renderDashboard();
+    }
+
+    /* ============================================================
+       8) OPPORTUNITIES MODULE
+       ============================================================ */
+    function renderOpportunities(){
+      const tbody = document.getElementById('oppTbody');
+      tbody.innerHTML = opportunities.map(o => {
+        const c = customers.find(x=>x.id===o.customer_id);
+        return `
+          <tr>
+            <td>${o.opportunity_id}</td>
+            <td class="text-start">${o.name||''}</td>
+            <td class="text-start">${c?c.name:o.customer_id}</td>
+            <td>${money(o.expected_value)}</td>
+            <td>${o.stage||''}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openOppForm('${o.opportunity_id}')">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteOpportunity('${o.opportunity_id}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openOppForm(id=''){
+      const wrap = document.getElementById('oppFormWrap');
+      const isEdit = !!id;
+      const o = isEdit ? opportunities.find(x=>x.opportunity_id===id) : {};
+      const cust = customers.find(c=>c.id===o?.customer_id);
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} cơ hội</h5>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">ID</label>
+                <input class="form-control" disabled id="op_id" value="${isEdit?o.opportunity_id:generateOpportunityId()}">
+              </div>
+              <div class="col-md-9">
+                <label class="form-label">Tên cơ hội</label>
+                <input class="form-control" id="op_name" value="${o?.name||''}">
+              </div>
+              <div class="col-md-6 position-relative">
+                <label class="form-label">Khách hàng</label>
+                <input class="form-control" id="op_client" autocomplete="off"
+                       value="${cust?.name||''}"
+                       oninput="suggestCustomer(this.value,'op_client')">
+                <div id="op_client_sugs" class="suggestions d-none"></div>
+                <input type="hidden" id="op_client_id" value="${o?.customer_id||''}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Giá trị kỳ vọng</label>
+                <input type="number" class="form-control" id="op_val" value="${o?.expected_value||0}">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label">Stage</label>
+                <select class="form-select" id="op_stage">
+                  <option${o?.stage==='mới'?' selected':''}>mới</option>
+                  <option${o?.stage==='đánh giá'?' selected':''}>đánh giá</option>
+                  <option${o?.stage==='đàm phán'?' selected':''}>đàm phán</option>
+                  <option${o?.stage==='đã thắng'?' selected':''}>đã thắng</option>
+                  <option${o?.stage==='đã mất'?' selected':''}>đã mất</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateOpportunity('${id}')`:'addOpportunity()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('oppFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addOpportunity(){
+      const payload = {
+        opportunity_id: document.getElementById('op_id').value,
+        name: document.getElementById('op_name').value.trim(),
+        customer_id: document.getElementById('op_client_id').value,
+        expected_value: parseInt(document.getElementById('op_val').value||'0',10),
+        stage: document.getElementById('op_stage').value,
+        created_at: new Date().toISOString()
+      };
+      if(!payload.name) return alert('Tên cơ hội không được trống');
+      if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+      const {error} = await sb.from('opportunities').insert([payload]);
+      if(error) return alert(error.message);
+      await loadAll(); renderOpportunities(); renderDashboard();
+      document.getElementById('oppFormWrap').classList.add('d-none');
+    }
+
+    async function updateOpportunity(id){
+      const payload = {
+        name: document.getElementById('op_name').value.trim(),
+        customer_id: document.getElementById('op_client_id').value,
+        expected_value: parseInt(document.getElementById('op_val').value||'0',10),
+        stage: document.getElementById('op_stage').value
+      };
+      if(!payload.name) return alert('Tên cơ hội không được trống');
+      if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+      const {error} = await sb.from('opportunities').update(payload).eq('opportunity_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderOpportunities(); renderDashboard();
+      document.getElementById('oppFormWrap').classList.add('d-none');
+    }
+
+    async function deleteOpportunity(id){
+      if(!confirm('Xóa cơ hội?')) return;
+      const {error} = await sb.from('opportunities').delete().eq('opportunity_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderOpportunities(); renderDashboard();
+    }
+
+    /* ============================================================
+       9) QUOTES MODULE (Quote Items table)
+       ============================================================ */
+    function renderQuotes(){
+      const tbody = document.getElementById('quoteTbody');
+      tbody.innerHTML = quotes.map(q => {
+        const c = customers.find(x=>x.id===q.customer_id);
+        return `
+          <tr>
+            <td>${q.quotes_id}</td>
+            <td class="text-start">${c?c.name:q.customer_id}</td>
+            <td>${q.opportunity_id||''}</td>
+            <td>${money(q.amount)}</td>
+            <td>${q.status||''}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openQuoteForm('${q.quotes_id}')">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteQuote('${q.quotes_id}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openQuoteForm(id=''){
+      const wrap = document.getElementById('quoteFormWrap');
+      const isEdit = !!id;
+      const q = isEdit ? quotes.find(x=>x.quotes_id===id) : {};
+      const cust = customers.find(c=>c.id===q?.customer_id);
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} báo giá</h5>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">ID</label>
+                <input class="form-control" disabled id="q_id" value="${isEdit?q.quotes_id:generateQuoteId()}">
+              </div>
+              <div class="col-md-9 position-relative">
+                <label class="form-label">Khách hàng</label>
+                <input class="form-control" id="q_client" autocomplete="off"
+                       value="${cust?.name||''}" oninput="suggestCustomer(this.value,'q_client')">
+                <div id="q_client_sugs" class="suggestions d-none"></div>
+                <input type="hidden" id="q_client_id" value="${q?.customer_id||''}">
+              </div>
+              <div class="col-md-6 position-relative">
+                <label class="form-label">Cơ hội (tùy chọn)</label>
+                <input class="form-control" id="q_opp" autocomplete="off"
+                       value="${q?.opportunity_id||''}" oninput="suggestOpportunity(this.value,'q_opp')">
+                <div id="q_opp_sugs" class="suggestions d-none"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" id="q_status">
+                  <option${q?.status==='nháp'?' selected':''}>nháp</option>
+                  <option${q?.status==='đã gửi'?' selected':''}>đã gửi</option>
+                  <option${q?.status==='chấp nhận'?' selected':''}>chấp nhận</option>
+                  <option${q?.status==='từ chối'?' selected':''}>từ chối</option>
+                </select>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <h6 class="mb-3">Quote Items</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle" id="quote-items-table">
+                <thead class="table-light">
+                  <tr>
+                    <th>No</th>
+                    <th>service_id</th>
+                    <th class="text-start">Service name</th>
+                    <th>qty</th>
+                    <th>unit price</th>
+                    <th>total</th>
+                    <th style="width:120px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="qi_tbody"></tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="5" class="text-end fw-semibold">Tổng</td>
+                    <td id="qi_total" class="fw-bold">0</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" onclick="addQuoteItemRow()">
+              <i class="bi bi-plus-lg me-1"></i>Thêm hàng
+            </button>
+
+            <div class="mt-4 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateQuote('${id}')`:'addQuote()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu báo giá
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('quoteFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      loadQuoteItems(id);
+    }
+
+    async function loadQuoteItems(qid){
+      const tbody = document.getElementById('qi_tbody');
+      tbody.innerHTML = '';
+      let total = 0;
+
+      if(!qid){
+        document.getElementById('qi_total').textContent = '0';
+        return;
+      }
+      const {data, error} = await sb.from('quote_items').select('*').eq('quote_id', qid);
+      if(error){ alert(error.message); return; }
+
+      tbody.innerHTML = data.map((it, idx) => {
+        total += (it.amount||0);
+        const sv = services.find(s=>s.services_id===it.service_id);
+        return `
+          <tr>
+            <td>${idx+1}</td>
+            <td>${it.service_id}</td>
+            <td class="text-start">${sv?sv.name:''}</td>
+            <td>${it.quantity}</td>
+            <td>${money(it.unit_price)}</td>
+            <td>${money(it.amount)}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteQuoteItem('${it.quote_items_id}','${qid}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('qi_total').textContent = money(total);
+
+      // Đồng bộ tổng amount lên quotes (phòng khi DB trigger chưa cấu hình)
+      await sb.from('quotes').update({ amount: total }).eq('quotes_id', qid);
+      await loadAll(); renderQuotes();
+    }
+
+    function addQuoteItemRow(){
+      const tbody = document.getElementById('qi_tbody');
+      const idx = Date.now();
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr id="qi_row_${idx}">
+          <td>-</td>
+          <td>
+            <input type="hidden" id="qi_service_${idx}_id">
+            <div class="position-relative">
+              <input class="form-control form-control-sm" id="qi_service_${idx}" autocomplete="off"
+                     placeholder="Tìm dịch vụ..." oninput="suggestService(this.value,'${idx}')">
+              <div id="qi_service_${idx}_sugs" class="suggestions d-none"></div>
+            </div>
+          </td>
+          <td class="text-start" id="qi_name_${idx}"></td>
+          <td><input type="number" class="form-control form-control-sm text-center" id="qi_qty_${idx}" value="1" style="width:90px;"></td>
+          <td><input type="number" class="form-control form-control-sm text-center" id="qi_price_${idx}" value="0" style="width:120px;"></td>
+          <td>-</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="saveQuoteItem('${idx}')">
+              <i class="bi bi-check2"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('qi_row_${idx}').remove()">
+              <i class="bi bi-x"></i>
+            </button>
+          </td>
+        </tr>
+      `);
+    }
+
+    async function saveQuoteItem(idx){
+      const qid = document.getElementById('q_id').value;
+      const sid = document.getElementById(`qi_service_${idx}_id`).value;
+      if(!sid) return alert('Chưa chọn dịch vụ');
+
+      const qty = parseInt(document.getElementById(`qi_qty_${idx}`).value||'0',10);
+      const up  = parseInt(document.getElementById(`qi_price_${idx}`).value||'0',10);
+      if(qty<=0) return alert('Số lượng phải > 0');
+
+      // chống trùng trong cùng báo giá
+      const {data:ex, error:exErr} = await sb.from('quote_items')
+        .select('quote_items_id').eq('quote_id', qid).eq('service_id', sid);
+      if(exErr) return alert(exErr.message);
+      if(ex && ex.length) return alert('Dịch vụ đã tồn tại trong báo giá này.');
+
+      const amt = qty * up;
+      const {error} = await sb.from('quote_items').insert([{
+        quote_id: qid, service_id: sid, quantity: qty, unit_price: up, amount: amt
+      }]);
+      if(error) return alert(error.message);
+      await loadQuoteItems(qid);
+    }
+
+    async function deleteQuoteItem(qiId, qid){
+      if(!confirm('Xóa hàng khỏi báo giá?')) return;
+      const {error} = await sb.from('quote_items').delete().eq('quote_items_id', qiId);
+      if(error) return alert(error.message);
+      await loadQuoteItems(qid);
+    }
+
+    async function addQuote(){
+      const qid = document.getElementById('q_id').value;
+      const payload = {
+        quotes_id: qid,
+        customer_id: document.getElementById('q_client_id').value,
+        opportunity_id: document.getElementById('q_opp').value || null,
+        description: null,
+        amount: 0, // sẽ cập nhật sau khi thêm items
+        status: document.getElementById('q_status').value,
+        created_at: new Date().toISOString()
+      };
+      if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+
+      const {error} = await sb.from('quotes').insert([payload]);
+      if(error) return alert(error.message);
+
+      // load lại + mở form edit để thêm items (nếu muốn)
+      await loadAll(); renderQuotes(); renderDashboard();
+      openQuoteForm(qid); // mở lại form để người dùng thêm dòng
+    }
+
+    async function updateQuote(id){
+      const payload = {
+        customer_id: document.getElementById('q_client_id').value,
+        opportunity_id: document.getElementById('q_opp').value || null,
+        status: document.getElementById('q_status').value
+      };
+      if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+
+      const {error} = await sb.from('quotes').update(payload).eq('quotes_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderQuotes(); renderDashboard();
+      document.getElementById('quoteFormWrap').classList.add('d-none');
+    }
+
+    async function deleteQuote(id){
+      if(!confirm('Xóa báo giá?')) return;
+      const {error} = await sb.from('quotes').delete().eq('quotes_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderQuotes(); renderDashboard();
+    }
+
+    /* ============================================================
+       10) CONTRACTS MODULE
+       ============================================================ */
+    function renderContracts(){
+      const tbody = document.getElementById('contractTbody');
+      tbody.innerHTML = contracts.map(ct => {
+        const pr = projects.find(p=>p.project_id===ct.project_id);
+        const c  = customers.find(x=>x.id===ct.customer_id);
+        return `
+          <tr>
+            <td>${ct.contract_id}</td>
+            <td class="text-start">${pr?pr.project_name:ct.project_id}</td>
+            <td class="text-start">${c?c.name:ct.customer_id}</td>
+            <td>${money(ct.value)}</td>
+            <td>${ct.status||''}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openContractForm('${ct.contract_id}')">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteContract('${ct.contract_id}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openContractForm(id=''){
+      const wrap = document.getElementById('contractFormWrap');
+      const isEdit = !!id;
+      const ct = isEdit ? contracts.find(x=>x.contract_id===id) : {};
+      const pr = projects.find(p=>p.project_id===ct?.project_id);
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} hợp đồng</h5>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">ID</label>
+                <input class="form-control" disabled id="ct_id" value="${isEdit?ct.contract_id:generateContractId()}">
+              </div>
+              <div class="col-md-9 position-relative">
+                <label class="form-label">Dự án</label>
+                <input class="form-control" id="ct_proj" autocomplete="off"
+                       value="${pr?.project_name||''}" oninput="suggestProject(this.value,'ct_proj')">
+                <div id="ct_proj_sugs" class="suggestions d-none"></div>
+                <input type="hidden" id="ct_proj_id" value="${ct?.project_id||''}">
+              </div>
+              <div class="col-md-6 position-relative">
+                <label class="form-label">Báo giá (tùy chọn)</label>
+                <input class="form-control" id="ct_quote" autocomplete="off"
+                       value="${ct?.quotes_id||''}" oninput="suggestQuote(this.value,'ct_quote')">
+                <div id="ct_quote_sugs" class="suggestions d-none"></div>
+                <input type="hidden" id="ct_quote_id" value="${ct?.quotes_id||''}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Giá trị</label>
+                <input type="number" class="form-control" id="ct_val" value="${ct?.value||0}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Ngày HĐ</label>
+                <input type="date" class="form-control" id="ct_date" value="${ct?.contract_date||''}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" id="ct_status">
+                  <option${ct?.status==='hiệu lực'?' selected':''}>hiệu lực</option>
+                  <option${ct?.status==='hoàn thành'?' selected':''}>hoàn thành</option>
+                  <option${ct?.status==='hủy'?' selected':''}>hủy</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateContract('${id}')`:'addContract()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('contractFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addContract(){
+      const projId = document.getElementById('ct_proj_id').value;
+      const proj   = projects.find(p=>p.project_id===projId)||{};
+      const payload = {
+        contract_id: document.getElementById('ct_id').value,
+        project_id: projId,
+        customer_id: proj.customer_id,
+        quotes_id: document.getElementById('ct_quote_id').value || null,
+        value: parseInt(document.getElementById('ct_val').value||'0',10),
+        contract_date: document.getElementById('ct_date').value || null,
+        status: document.getElementById('ct_status').value,
+        created_at: new Date().toISOString()
+      };
+      if(!payload.project_id) return alert('Chưa chọn dự án hợp lệ');
+      const {error} = await sb.from('contracts').insert([payload]);
+      if(error) return alert(error.message);
+      await loadAll(); renderContracts(); renderDashboard();
+      document.getElementById('contractFormWrap').classList.add('d-none');
+    }
+
+    async function updateContract(id){
+      const projId = document.getElementById('ct_proj_id').value;
+      const proj   = projects.find(p=>p.project_id===projId)||{};
+      const payload = {
+        project_id: projId,
+        customer_id: proj.customer_id,
+        quotes_id: document.getElementById('ct_quote_id').value || null,
+        value: parseInt(document.getElementById('ct_val').value||'0',10),
+        contract_date: document.getElementById('ct_date').value || null,
+        status: document.getElementById('ct_status').value
+      };
+      if(!payload.project_id) return alert('Chưa chọn dự án hợp lệ');
+      const {error} = await sb.from('contracts').update(payload).eq('contract_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderContracts(); renderDashboard();
+      document.getElementById('contractFormWrap').classList.add('d-none');
+    }
+
+    async function deleteContract(id){
+      if(!confirm('Xóa hợp đồng?')) return;
+      const {error} = await sb.from('contracts').delete().eq('contract_id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderContracts(); renderDashboard();
+    }
+
+    /* ============================================================
+       11) USERS MODULE (whitelist)
+       ============================================================ */
+    function renderUsers(){
+      const me = users.find(u=>u.email===currentUser.email);
+      // Nếu không có user_profiles hoặc không phải admin thì ẩn tab Users
+      document.getElementById('navUsers').style.display =
+        (me && me.role==='admin') ? '' : 'none';
+
+      const tbody = document.getElementById('userTbody');
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td class="text-start">${u.email}</td>
+          <td>${u.role||''}</td>
+          <td>${u.active?'true':'false'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openUserForm('${u.id}')">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${u.id}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openUserForm(id=''){
+      const wrap = document.getElementById('userFormWrap');
+      const isEdit = !!id;
+      const u = isEdit ? users.find(x=>x.id===id) : {};
+      wrap.classList.remove('d-none');
+      wrap.innerHTML = `
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} user</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input class="form-control" id="us_email" value="${u?.email||''}" ${isEdit?'disabled':''}>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Role</label>
+                <select class="form-select" id="us_role">
+                  <option value="user"${u?.role==='user'?' selected':''}>user</option>
+                  <option value="admin"${u?.role==='admin'?' selected':''}>admin</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Active</label>
+                <select class="form-select" id="us_active">
+                  <option value="true"${u?.active?' selected':''}>true</option>
+                  <option value="false"${!u?.active?' selected':''}>false</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary" onclick="${isEdit?`updateUser('${id}')`:'addUser()'}">
+                <i class="bi bi-check2-circle me-1"></i>Lưu
+              </button>
+              <button class="btn btn-outline-secondary" onclick="document.getElementById('userFormWrap').classList.add('d-none')">
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function addUser(){
+      const payload = {
+        email: document.getElementById('us_email').value.trim(),
+        role: document.getElementById('us_role').value,
+        active: document.getElementById('us_active').value === 'true',
+        created_at: new Date().toISOString()
+      };
+      if(!payload.email) return alert('Email không được trống');
+      const {error} = await sb.from('user_profiles').insert([payload]);
+      if(error) return alert(error.message);
+      await loadAll(); renderUsers();
+      document.getElementById('userFormWrap').classList.add('d-none');
+    }
+
+    async function updateUser(id){
+      const payload = {
+        role: document.getElementById('us_role').value,
+        active: document.getElementById('us_active').value === 'true'
+      };
+      const {error} = await sb.from('user_profiles').update(payload).eq('id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderUsers();
+      document.getElementById('userFormWrap').classList.add('d-none');
+    }
+
+    async function deleteUser(id){
+      if(!confirm('Xóa user?')) return;
+      const {error} = await sb.from('user_profiles').delete().eq('id', id);
+      if(error) return alert(error.message);
+      await loadAll(); renderUsers();
+    }
+
+    /* ============================================================
+       12) AUTOCOMPLETE HELPERS
+       ============================================================ */
+    function suggestCustomer(q, fld){
+      const box = document.getElementById(`${fld}_sugs`);
+      box.innerHTML = '';
+      if(!q) { box.classList.add('d-none'); return; }
+      const list = customers.filter(c =>
+        (c.name||'').toLowerCase().includes(q.toLowerCase()) ||
+        (c.id||'').toLowerCase().includes(q.toLowerCase())
+      );
+      list.forEach(c=>{
+        const d = document.createElement('div');
+        d.className = 'suggestion-item';
+        d.textContent = `${c.id} – ${c.name}`;
+        d.onclick = ()=>{
+          document.getElementById(fld).value = c.name;
+          const hid = document.getElementById(`${fld}_id`);
+          if(hid) hid.value = c.id;
+          box.classList.add('d-none');
+        };
+        box.appendChild(d);
+      });
+      box.classList.remove('d-none');
+    }
+
+    function suggestOpportunity(q, fld){
+      const box = document.getElementById(`${fld}_sugs`);
+      box.innerHTML = '';
+      if(!q) { box.classList.add('d-none'); return; }
+      const list = opportunities.filter(o => (o.opportunity_id||'').toLowerCase().includes(q.toLowerCase()));
+      list.forEach(o=>{
+        const d = document.createElement('div');
+        d.className = 'suggestion-item';
+        d.textContent = o.opportunity_id;
+        d.onclick = ()=>{
+          document.getElementById(fld).value = o.opportunity_id;
+          box.classList.add('d-none');
+        };
+        box.appendChild(d);
+      });
+      box.classList.remove('d-none');
+    }
+
+    
+    function suggestService(q, idx){
+      const box = document.getElementById(`qi_service_${idx}_sugs`);
+      box.innerHTML = '';
+      if(!q) { box.classList.add('d-none'); return; }
+      const list = services.filter(s =>
+        (s.name||'').toLowerCase().includes(q.toLowerCase()) ||
+        (s.services_id||'').toLowerCase().includes(q.toLowerCase())
+      );
+      list.forEach(s=>{
+        const d = document.createElement('div');
+        d.className = 'suggestion-item';
+        d.textContent = `${s.services_id} – ${s.name}`;
+        d.onclick = ()=>{
+          document.getElementById(`qi_service_${idx}`).value = s.name;
+          document.getElementById(`qi_service_${idx}_id`).value = s.services_id;
+          document.getElementById(`qi_name_${idx}`).textContent = s.name;
+          const priceEl = document.getElementById(`qi_price_${idx}`);
+          if(priceEl) priceEl.value = s.unit_price || 0; // auto fill đơn giá
+          box.classList.add('d-none');
+        };
+        box.appendChild(d);
+      });
+      box.classList.remove('d-none');
+    }
+function suggestProject(q, fld){
+      const box = document.getElementById(`${fld}_sugs`);
+      box.innerHTML = '';
+      if(!q) { box.classList.add('d-none'); return; }
+      const list = projects.filter(p =>
+        (p.project_name||'').toLowerCase().includes(q.toLowerCase()) ||
+        (p.project_id||'').toLowerCase().includes(q.toLowerCase())
+      );
+      list.forEach(p=>{
+        const d = document.createElement('div');
+        d.className = 'suggestion-item';
+        d.textContent = `${p.project_id} – ${p.project_name}`;
+        d.onclick = ()=>{
+          document.getElementById(fld).value = p.project_name;
+          const hid = document.getElementById(`${fld}_id`);
+          if(hid) hid.value = p.project_id;
+          box.classList.add('d-none');
+        };
+        box.appendChild(d);
+      });
+      box.classList.remove('d-none');
+    }
+
+    function suggestQuote(q, fld){
+      const box = document.getElementById(`${fld}_sugs`);
+      box.innerHTML = '';
+      if(!q) { box.classList.add('d-none'); return; }
+      const list = quotes.filter(x => (x.quotes_id||'').toLowerCase().includes(q.toLowerCase()));
+      list.forEach(x=>{
+        const d = document.createElement('div');
+        d.className = 'suggestion-item';
+        d.textContent = x.quotes_id;
+        d.onclick = ()=>{
+          document.getElementById(fld).value = x.quotes_id;
+          const hid = document.getElementById(`${fld}_id`);
+          if(hid) hid.value = x.quotes_id;
+          box.classList.add('d-none');
+        };
+        box.appendChild(d);
+      });
+      box.classList.remove('d-none');
+    }
+
+    
+    // ===== AUTH HELPERS =====
+    function showAuthOverlay(msg=''){
+      const el = document.getElementById('authOverlay');
+      if(msg) document.getElementById('authError').textContent = msg;
+      el.classList.remove('d-none');
+    }
+    function hideAuthOverlay(){
+      document.getElementById('authError').textContent = '';
+      document.getElementById('authOverlay').classList.add('d-none');
+    }
+    async function enforceAuth(){
+      try{
+        const { data:{ user } } = await sb.auth.getUser();
+        if(!user){
+          showAuthOverlay();
+          return; // chưa đăng nhập -> dừng render
+        }
+        // Kiểm tra whitelist
+        const { data:prof, error } = await sb.from('user_profiles')
+          .select('role, active').eq('email', user.email).single();
+        if(error || !prof || !prof.active){
+          showAuthOverlay('email đăng nhập không thuộc hệ thống VSEC; hãy liên hệ admin');
+          await sb.auth.signOut();
+          return;
+        }
+        currentUser = { email: user.email, role: prof.role || 'user' };
+        document.getElementById('currentEmail').textContent = currentUser.email;
+        hideAuthOverlay();
+
+        await loadAll();
+        renderAll();
+        showSection('dashboard');
+      }catch(e){
+        console.error(e);
+        showAuthOverlay('Không thể xác thực. Vui lòng thử lại.');
+      }
+    }
+
+    function renderAll(){
+      renderDashboard();
+      renderCustomers();
+      renderServices();
+      renderProjects();
+      renderOpportunities();
+      renderQuotes();
+      renderContracts();
+      renderUsers();
+    }
+
+    // Đăng nhập Google
+    document.addEventListener('click', (e)=>{
+      if(e.target && e.target.id==='btnGoogle'){
+        sb.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.href }
+        });
+      }
+    });
+
+    // Theo dõi thay đổi phiên
+    sb.auth.onAuthStateChange((_event, _session)=>{
+      // Khi signed in/out -> gọi lại enforceAuth
+      enforceAuth();
+    });
+
+
+    /* ============================================================
+       13) NAV & INIT
+       ============================================================ */
+    // Sidebar nav
+    document.querySelectorAll('#sidebarNav .nav-link[data-page]').forEach(a=>{
+      a.addEventListener('click', () => showSection(a.dataset.page));
+    });
+
+    // Buttons add
+    document.getElementById('btnAddCustomer').onclick = ()=>openCustomerForm();
+    document.getElementById('btnAddService').onclick  = ()=>openServiceForm();
+    document.getElementById('btnAddProject').onclick  = ()=>openProjectForm();
+    document.getElementById('btnAddOpportunity').onclick = ()=>openOppForm();
+    document.getElementById('btnAddQuote').onclick    = ()=>openQuoteForm();
+    document.getElementById('btnAddContract').onclick = ()=>openContractForm();
+    document.getElementById('btnAddUser').onclick     = ()=>openUserForm();
+
+    // Sign out
+    document.getElementById('btnSignOut').onclick = async (e)=>{
+      e.preventDefault();
+      await sb.auth.signOut();
+      location.reload();
+    };
+
+    async function init(){ await enforceAuth(); }
+
+    init();
+  </script>
+
+  <!-- Bootstrap 5 JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
 </body>
 </html>
