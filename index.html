@@ -113,7 +113,7 @@
     <ul class="nav nav-pills flex-column gap-1" id="sidebarNav">
       <li class="nav-item"><a class="nav-link active" data-page="dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
       <li class="nav-item"><a class="nav-link" data-page="customers"><i class="bi bi-people me-2"></i>Customers</a></li>
-      <li class="nav-item"><a class="nav-link" data-page="services"><i class="bi bi-box-seam me-2"></i>Services</a></li>
+      <li class="nav-item d-none"><a class="nav-link" data-page="services"><i class="bi bi-box-seam me-2"></i>Services</a></li>
       <li class="nav-item"><a class="nav-link" data-page="projects"><i class="bi bi-kanban me-2"></i>Projects</a></li>
       <li class="nav-item"><a class="nav-link" data-page="opportunities"><i class="bi bi-bullseye me-2"></i>Opportunities</a></li>
       <li class="nav-item"><a class="nav-link" data-page="quotes"><i class="bi bi-receipt me-2"></i>Quotes</a></li>
@@ -338,10 +338,12 @@
                 <tr>
                   <th>ID</th>
                   <th>Khách hàng</th>
-                  <th>Cơ hội</th>
-                  <th>Amount</th>
+                  <th>Dự án</th>
+                  <th>Nội dung</th>
+                  <th>Số tiền</th>
                   <th>Status</th>
-                  <th style="width:140px;">Actions</th>
+                  <th>Lần gửi</th>
+                  <th>File đính kèm</th>
                 </tr>
               </thead>
               <tbody id="quoteTbody"></tbody>
@@ -632,9 +634,20 @@
       };
       if(!payload.name) return alert('Tên khách hàng không được trống');
       const {error} = await sb.from('customers').insert([payload]);
-      if(error) return alert(error.message);
-      await loadAll(); renderCustomers(); renderDashboard();
-      document.getElementById('customerFormWrap').classList.add('d-none');
+      if (error) return alert(error.message);
+
+// phân quyền hiển thị
+if (currentUser.role === 'admin' || currentUser.role === 'BOM') {
+  await loadAll();
+  renderCustomers();
+  renderDashboard();
+} else {
+  // chỉ show đúng record vừa thêm
+  customers = [payload];
+  renderCustomers();
+}
+
+document.getElementById('customerFormWrap').classList.add('d-none');
     }
 
     async function updateCustomer(id){
@@ -648,9 +661,20 @@
       };
       if(!payload.name) return alert('Tên khách hàng không được trống');
       const {error} = await sb.from('customers').update(payload).eq('id', id);
-      if(error) return alert(error.message);
-      await loadAll(); renderCustomers(); renderDashboard();
-      document.getElementById('customerFormWrap').classList.add('d-none');
+      if (error) return alert(error.message);
+
+// phân quyền hiển thị
+if (currentUser.role === 'admin' || currentUser.role === 'BOM') {
+  await loadAll();
+  renderCustomers();
+  renderDashboard();
+} else {
+  // chỉ show đúng record vừa thêm
+  customers = [payload];
+  renderCustomers();
+}
+
+document.getElementById('customerFormWrap').classList.add('d-none');
     }
 
     async function deleteCustomer(id){
@@ -1029,10 +1053,27 @@
     function renderQuotes(){
       const tbody = document.getElementById('quoteTbody');
       tbody.innerHTML = quotes.map(q => {
-        const c = customers.find(x=>x.id===q.customer_id);
+        const c = customers.find(x => x.id === q.customer_id);
         return `
           <tr>
             <td>${q.quotes_id}</td>
+            <td class="text-start">${c ? c.name : q.customer_id}</td>
+            <td>${q.project_id || ''}</td>
+            <td>${q.description || ''}</td>
+            <td>${money(q.amount)}</td>
+            <td>${q.status || ''}</td>
+            <td>${q.send_count || 0}</td>
+            <td>${
+              q.attachment_url
+                ? \`<a href="\${q.attachment_url}" target="_blank">Tải</a>\`
+                : ''
+            }</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+</td>
             <td class="text-start">${c?c.name:q.customer_id}</td>
             <td>${q.opportunity_id||''}</td>
             <td>${money(q.amount)}</td>
@@ -1647,6 +1688,16 @@ function suggestProject(q, fld){
         currentUser = { email: user.email, role: prof.role || 'user' };
         document.getElementById('currentEmail').textContent = currentUser.email;
         hideAuthOverlay();
+
+        // phân quyền
+        if (currentUser.role !== 'admin' && currentUser.role !== 'BOM') {
+          document.querySelectorAll('#sidebarNav .nav-item').forEach(li => {
+            const page = li.querySelector('a').dataset.page;
+            if (!['customers','quotes','contracts'].includes(page)) {
+              li.classList.add('d-none');
+            }
+          });
+        }
 
         await loadAll();
         renderAll();
