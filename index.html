@@ -328,7 +328,7 @@
             </td>
           </tr>`; }).join(''); }
 
-    function openProjectForm(id=''){ const wrap=document.getElementById('projectFormWrap'); const isEdit=!!id; const p=isEdit?projects.find(x=>x.project_id===id):{}; const cust=customers.find(c=>c.id===p?.customer_id); wrap.classList.remove('d-none'); wrap.innerHTML=`
+    function openProjectForm(id=''){ const wrap=document.getElementById('projectFormWrap'); const isEdit=!!id; const p=isEdit?projects.find(x=>x.project_id===id):{}; const cust=customers.find(c=>c.id===p?.customer_id); wrap.classList.remove('d-none'); window.scrollTo({ top: 0, behavior: 'smooth' });wrap.innerHTML=`
         <div class="card card-shadow mb-4"><div class="card-body">
           <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} dự án</h5>
           <div class="row g-3">
@@ -363,7 +363,7 @@
             </td>
           </tr>`; }).join(''); }
 
-    function openOppForm(id=''){ const wrap=document.getElementById('oppFormWrap'); const isEdit=!!id; const o=isEdit?opportunities.find(x=>x.opportunity_id===id):{}; const cust=customers.find(c=>c.id===o?.customer_id); wrap.classList.remove('d-none'); wrap.innerHTML=`
+    function openOppForm(id=''){ const wrap=document.getElementById('oppFormWrap'); const isEdit=!!id; const o=isEdit?opportunities.find(x=>x.opportunity_id===id):{}; const cust=customers.find(c=>c.id===o?.customer_id); wrap.classList.remove('d-none'); window.scrollTo({ top: 0, behavior: 'smooth' });wrap.innerHTML=`
         <div class="card card-shadow mb-4"><div class="card-body">
           <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} cơ hội</h5>
           <div class="row g-3">
@@ -399,7 +399,7 @@
             </td>
           </tr>`; }).join(''); }
 
-    function openQuoteForm(id=''){ const wrap=document.getElementById('quoteFormWrap'); const isEdit=!!id; const q=isEdit?quotes.find(x=>x.quotes_id===id):{}; const cust=customers.find(c=>c.id===q?.customer_id); const pr=projects.find(p=>p.project_id===q?.project_id); wrap.classList.remove('d-none'); wrap.innerHTML=`
+    function openQuoteForm(id=''){ const wrap=document.getElementById('quoteFormWrap'); const isEdit=!!id; const q=isEdit?quotes.find(x=>x.quotes_id===id):{}; const cust=customers.find(c=>c.id===q?.customer_id); const pr=projects.find(p=>p.project_id===q?.project_id); wrap.classList.remove('d-none'); window.scrollTo({ top: 0, behavior: 'smooth' });wrap.innerHTML=`
         <div class="card card-shadow mb-4"><div class="card-body">
           <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} báo giá</h5>
           <div class="row g-3">
@@ -436,7 +436,7 @@
             </td>
           </tr>`; }).join(''); }
 
-    function openContractForm(id=''){ const wrap=document.getElementById('contractFormWrap'); const isEdit=!!id; const ct=isEdit?contracts.find(x=>x.contract_id===id):{}; const pr=projects.find(p=>p.project_id===ct?.project_id); wrap.classList.remove('d-none'); wrap.innerHTML=`
+    function openContractForm(id=''){ const wrap=document.getElementById('contractFormWrap'); const isEdit=!!id; const ct=isEdit?contracts.find(x=>x.contract_id===id):{}; const pr=projects.find(p=>p.project_id===ct?.project_id); wrap.classList.remove('d-none');window.scrollTo({ top: 0, behavior: 'smooth' }); wrap.innerHTML=`
         <div class="card card-shadow mb-4"><div class="card-body">
           <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} hợp đồng</h5>
           <div class="row g-3">
