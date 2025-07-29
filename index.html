@@ -277,7 +277,7 @@
       `).join(''); }
 
     function openCustomerForm(id=''){
-      const wrap=document.getElementById('customerFormWrap'); const isEdit=!!id; const c=isEdit?customers.find(x=>x.id===id):{}; wrap.classList.remove('d-none'); wrap.innerHTML=`
+      const wrap=document.getElementById('customerFormWrap'); const isEdit=!!id; const c=isEdit?customers.find(x=>x.id===id):{}; wrap.classList.remove('d-none'); wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });wrap.innerHTML=`
         <div class="card card-shadow mb-4"><div class="card-body">
           <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} khách hàng</h5>
           <div class="row g-3">
