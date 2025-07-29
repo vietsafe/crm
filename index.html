@@ -477,7 +477,56 @@
     /* 12) AUTOCOMPLETE HELPERS */
     function suggestCustomer(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=customers.filter(c=>(c.name||'').toLowerCase().includes(q.toLowerCase())||(c.id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(c=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=`${c.id} – ${c.name}`; d.onclick=()=>{ document.getElementById(fld).value=c.name; const hid=document.getElementById(`${fld}_id`); if(hid) hid.value=c.id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
     function suggestOpportunity(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=opportunities.filter(o=>(o.opportunity_id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(o=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=o.opportunity_id; d.onclick=()=>{ document.getElementById(fld).value=o.opportunity_id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
-    function suggestProject(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=projects.filter(p=>(p.project_name||'').toLowerCase().includes(q.toLowerCase())||(p.project_id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(p=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=`${p.project_id} – ${p.project_name}`; d.onclick=()=>{ document.getElementById(fld).value=p.project_name; const hid=document.getElementById(`${fld}_id`); if(hid) hid.value=p.project_id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
+    function suggestProject(q, fld) {
+  const box = document.getElementById(`${fld}_sugs`);
+  box.innerHTML = '';
+  // lấy customer đã chọn
+  const custId = document.getElementById('q_client_id').value;
+  if (!custId) {
+    box.innerHTML = `<div class="suggestion-item text-danger">Vui lòng chọn Khách hàng trước</div>`;
+    return box.classList.remove('d-none');
+  }
+  // lọc dự án của khách đó
+  const list = projects.filter(p =>
+    p.customer_id === custId &&
+    (
+      (p.project_name||'').toLowerCase().includes(q.toLowerCase()) ||
+      (p.project_id||'').toLowerCase().includes(q.toLowerCase())
+    )
+  );
+  if (list.length) {
+    list.forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'suggestion-item';
+      d.textContent = `${p.project_id} – ${p.project_name}`;
+      d.onclick = () => {
+        document.getElementById(fld).value = p.project_name;
+        document.getElementById(`${fld}_id`).value = p.project_id;
+        box.classList.add('d-none');
+      };
+      box.appendChild(d);
+    });
+  } else {
+    // nếu không có, thêm dòng “Thêm dự án mới”
+    const d = document.createElement('div');
+    d.className = 'suggestion-item text-primary';
+    d.textContent = '+ Thêm dự án mới';
+    d.onclick = () => {
+      box.classList.add('d-none');
+      // chuyển sang tab Projects và mở form thêm mới, gán custId
+      showSection('projects');
+      openProjectForm();
+      // sau khi openProjectForm, set luôn khách hàng cho form Projects
+      setTimeout(()=>{
+        document.getElementById('pr_client_id').value = custId;
+        document.getElementById('pr_client').value = document.getElementById('q_client').value;
+      },0);
+    };
+    box.appendChild(d);
+  }
+  box.classList.remove('d-none');
+}
+
     function suggestQuote(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=quotes.filter(x=>(x.quotes_id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(x=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=x.quotes_id; d.onclick=()=>{ document.getElementById(fld).value=x.quotes_id; const hid=document.getElementById(`${fld}_id`); if(hid) hid.value=x.quotes_id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
 
     // ===== AUTH HELPERS =====
