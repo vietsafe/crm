@@ -370,7 +370,8 @@
             <div class="col-md-3"><label class="form-label">ID</label><input class="form-control" disabled id="op_id" value="${isEdit?o.opportunity_id:generateOpportunityId()}"></div>
             <div class="col-md-9"><label class="form-label">Tên cơ hội</label><input class="form-control" id="op_name" value="${o?.name||''}"></div>
             <div class="col-md-6 position-relative"><label class="form-label">Khách hàng</label><input class="form-control" id="op_client" autocomplete="off" value="${cust?.name||''}" oninput="suggestCustomer(this.value,'op_client')"><div id="op_client_sugs" class="suggestions d-none"></div><input type="hidden" id="op_client_id" value="${o?.customer_id||''}"></div>
-            <div class="col-md-6"><label class="form-label">Giá trị kỳ vọng</label><input type="number" class="form-control" id="op_val" value="${o?.expected_value||0}"></div>
+            <div class="col-md-6"><label class="form-label">Giá trị kỳ vọng</label><input type="text" class="form-control money" id="q_amount"
+       value="${q?.amount ? money(q.amount) : 0}"></div>
             <div class="col-md-12"><label class="form-label">Stage</label><select class="form-select" id="op_stage"><option${o?.stage==='mới'?' selected':''}>mới</option><option${o?.stage==='đánh giá'?' selected':''}>đánh giá</option><option${o?.stage==='đàm phán'?' selected':''}>đàm phán</option><option${o?.stage==='đã thắng'?' selected':''}>đã thắng</option><option${o?.stage==='đã mất'?' selected':''}>đã mất</option></select></div>
           </div>
           <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateOpportunity('${id}')`:'addOpportunity()'}"><i class="bi bi-check2-circle me-1"></i>Lưu</button><button class="btn btn-outline-secondary" onclick="document.getElementById('oppFormWrap').classList.add('d-none')">Hủy</button></div>
@@ -407,7 +408,8 @@
             <div class="col-md-9 position-relative"><label class="form-label">Khách hàng</label><input class="form-control" id="q_client" autocomplete="off" value="${cust?.name||''}" oninput="suggestCustomer(this.value,'q_client')"><div id="q_client_sugs" class="suggestions d-none"></div><input type="hidden" id="q_client_id" value="${q?.customer_id||''}"></div>
             <div class="col-md-6 position-relative"><label class="form-label">Dự án</label><input class="form-control" id="q_project" oninput="suggestProject(this.value,'q_project')" …>
 <div id="q_project_sugs" class="suggestions d-none"></div><input type="hidden" id="q_project_id" value="${q?.project_id||''}"></div>
-            <div class="col-md-6"><label class="form-label">Số tiền</label><input type="number" class="form-control" id="q_amount" value="${q?.amount||0}"></div>
+            <div class="col-md-6"><label class="form-label">Số tiền</label><input type="text" class="form-control money" id="q_amount"
+       value="${q?.amount ? money(q.amount) : 0}"></div>
             <div class="col-12"><label class="form-label">Nội dung</label><textarea class="form-control" rows="2" id="q_desc">${q?.description||''}</textarea></div>
             <div class="col-md-6"><label class="form-label">Status</label><select class="form-select" id="q_status"><option${q?.status==='nháp'?' selected':''}>nháp</option><option${q?.status==='đã gửi'?' selected':''}>đã gửi</option><option${q?.status==='chấp nhận'?' selected':''}>chấp nhận</option><option${q?.status==='từ chối'?' selected':''}>từ chối</option></select></div>
             <div class="col-md-3"><label class="form-label">Lần gửi</label><input type="number" class="form-control" id="q_send" value="${q?.send_count||0}"></div>
@@ -416,9 +418,66 @@
           <div class="mt-4 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateQuote('${id}')`:'addQuote()'}"><i class="bi bi-check2-circle me-1"></i>Lưu báo giá</button><button class="btn btn-outline-secondary" onclick="document.getElementById('quoteFormWrap').classList.add('d-none')">Hủy</button></div>
         </div></div>`; }
 
-    async function addQuote(){ const qid=document.getElementById('q_id').value; const payload={ quotes_id:qid, customer_id:document.getElementById('q_client_id').value, project_id:document.getElementById('q_project_id').value || null, description:document.getElementById('q_desc').value || null, amount:parseInt(document.getElementById('q_amount').value||'0',10), status:document.getElementById('q_status').value, send_count: parseInt(document.getElementById('q_send').value||'0',10), pdf_url: document.getElementById('q_pdf').value || null, created_at:new Date().toISOString() }; if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('quotes').insert([payload]); if(error) return alert(error.message); await loadAll(); renderQuotes(); renderDashboard(); document.getElementById('quoteFormWrap').classList.add('d-none'); }
+    async function addOpportunity(){
+  // Lấy raw value và strip dấu phân tách
+  const rawVal = document.getElementById('op_val').value.replace(/\./g,'') || '0';
 
-    async function updateQuote(id){ const payload={ customer_id:document.getElementById('q_client_id').value, project_id:document.getElementById('q_project_id').value || null, description:document.getElementById('q_desc').value || null, amount:parseInt(document.getElementById('q_amount').value||'0',10), status:document.getElementById('q_status').value, send_count: parseInt(document.getElementById('q_send').value||'0',10), pdf_url: document.getElementById('q_pdf').value || null }; if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('quotes').update(payload).eq('quotes_id',id); if(error) return alert(error.message); await loadAll(); renderQuotes(); renderDashboard(); document.getElementById('quoteFormWrap').classList.add('d-none'); }
+  const payload = {
+    opportunity_id: document.getElementById('op_id').value,
+    name:           document.getElementById('op_name').value.trim(),
+    customer_id:    document.getElementById('op_client_id').value,
+    expected_value: parseInt(rawVal, 10),
+    stage:          document.getElementById('op_stage').value,
+    created_at:     new Date().toISOString()
+  };
+
+  // Các kiểm tra bắt buộc
+  if(!payload.name)        return alert('Tên cơ hội không được trống');
+  if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+
+  // Thực hiện INSERT
+  const { error } = await sb
+    .from('opportunities')
+    .insert([ payload ]);
+
+  if(error) return alert(error.message);
+
+  // Làm mới dữ liệu & UI
+  await loadAll();
+  renderOpportunities();
+  renderDashboard();
+  document.getElementById('oppFormWrap').classList.add('d-none');
+}
+
+async function updateOpportunity(id){
+  // Lấy raw value và strip dấu phân tách
+  const rawVal = document.getElementById('op_val').value.replace(/\./g,'') || '0';
+
+  const payload = {
+    name:           document.getElementById('op_name').value.trim(),
+    customer_id:    document.getElementById('op_client_id').value,
+    expected_value: parseInt(rawVal, 10),
+    stage:          document.getElementById('op_stage').value
+  };
+
+  // Các kiểm tra bắt buộc
+  if(!payload.name)        return alert('Tên cơ hội không được trống');
+  if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ');
+
+  // Thực hiện UPDATE
+  const { error } = await sb
+    .from('opportunities')
+    .update(payload)
+    .eq('opportunity_id', id);
+
+  if(error) return alert(error.message);
+
+  // Làm mới dữ liệu & UI
+  await loadAll();
+  renderOpportunities();
+  renderDashboard();
+  document.getElementById('oppFormWrap').classList.add('d-none');
+}
 
     async function deleteQuote(id){ if(!confirm('Xóa báo giá?')) return; const {error}=await sb.from('quotes').delete().eq('quotes_id',id); if(error) return alert(error.message); await loadAll(); renderQuotes(); renderDashboard(); }
 
@@ -472,8 +531,8 @@
         </div>
         <div class="col-md-6">
           <label class="form-label">Giá trị</label>
-          <input type="number" class="form-control" id="ct_val"
-                 value="${ct?.value||0}">
+          <input type="text" class="form-control money" id="ct_val"
+       value="${ct?.value ? money(ct.value) : 0}">
         </div>
         <div class="col-md-6">
           <label class="form-label">Ngày HĐ</label>
@@ -502,9 +561,94 @@
     </div></div>`;
 }
 
-    async function addContract(){ const projId=document.getElementById('ct_proj_id').value; const proj=projects.find(p=>p.project_id===projId)||{}; const payload={ contract_id:document.getElementById('ct_id').value, project_id:projId, customer_id:proj.customer_id, quotes_id:document.getElementById('ct_quote_id').value || null, value:parseInt(document.getElementById('ct_val').value||'0',10), contract_date:document.getElementById('ct_date').value || null, status:document.getElementById('ct_status').value, created_at:new Date().toISOString() }; if(!payload.project_id) return alert('Chưa chọn dự án hợp lệ'); const {error}=await sb.from('contracts').insert([payload]); if(error) return alert(error.message); await loadAll(); renderContracts(); renderDashboard(); document.getElementById('contractFormWrap').classList.add('d-none'); }
+    async function addContract(){
+  // 1) Lấy project và customer
+  const projId = document.getElementById('ct_proj_id').value;
+  if (!projId) return alert('Chưa chọn dự án hợp lệ');
+  const proj   = projects.find(p => p.project_id === projId) || {};
+  const custId = proj.customer_id;
 
-    async function updateContract(id){ const projId=document.getElementById('ct_proj_id').value; const proj=projects.find(p=>p.project_id===projId)||{}; const payload={ project_id:projId, customer_id:proj.customer_id, quotes_id:document.getElementById('ct_quote_id').value || null, value:parseInt(document.getElementById('ct_val').value||'0',10), contract_date:document.getElementById('ct_date').value || null, status:document.getElementById('ct_status').value }; if(!payload.project_id) return alert('Chưa chọn dự án hợp lệ'); const {error}=await sb.from('contracts').update(payload).eq('contract_id',id); if(error) return alert(error.message); await loadAll(); renderContracts(); renderDashboard(); document.getElementById('contractFormWrap').classList.add('d-none'); }
+  // 2) Kiểm tra trùng hợp đồng
+  const exists = contracts.some(c =>
+    c.project_id === projId && c.customer_id === custId
+  );
+  if (exists) {
+    return alert('Đã tồn tại hợp đồng cho dự án và khách hàng này.');
+  }
+
+  // 3) Lấy value và strip dấu phân tách
+  const rawVal = document.getElementById('ct_val').value.replace(/\./g,'') || '0';
+  const val    = parseInt(rawVal, 10);
+
+  // 4) Chuẩn bị payload
+  const payload = {
+    contract_id:   document.getElementById('ct_id').value,
+    project_id:    projId,
+    customer_id:   custId,
+    quotes_id:     document.getElementById('ct_quote_id').value || null,
+    value:         val,
+    contract_date: document.getElementById('ct_date').value || null,
+    status:        document.getElementById('ct_status').value,
+    created_at:    new Date().toISOString()
+  };
+
+  // 5) Insert
+  const { error } = await sb.from('contracts').insert([ payload ]);
+  if (error) return alert(error.message);
+
+  // 6) Refresh UI
+  await loadAll();
+  renderContracts();
+  renderDashboard();
+  document.getElementById('contractFormWrap').classList.add('d-none');
+}
+
+async function updateContract(id){
+  // 1) Lấy project và customer
+  const projId = document.getElementById('ct_proj_id').value;
+  if (!projId) return alert('Chưa chọn dự án hợp lệ');
+  const proj   = projects.find(p => p.project_id === projId) || {};
+  const custId = proj.customer_id;
+
+  // 2) Kiểm tra trùng (ngoại trừ chính hợp đồng đang edit)
+  const exists = contracts.some(c =>
+    c.contract_id !== id &&
+    c.project_id   === projId &&
+    c.customer_id  === custId
+  );
+  if (exists) {
+    return alert('Đã tồn tại hợp đồng cho dự án và khách hàng này.');
+  }
+
+  // 3) Lấy và parse value
+  const rawVal = document.getElementById('ct_val').value.replace(/\./g,'') || '0';
+  const val    = parseInt(rawVal, 10);
+
+  // 4) Payload update
+  const payload = {
+    project_id:    projId,
+    customer_id:   custId,
+    quotes_id:     document.getElementById('ct_quote_id').value || null,
+    value:         val,
+    contract_date: document.getElementById('ct_date').value || null,
+    status:        document.getElementById('ct_status').value
+  };
+
+  // 5) Update
+  const { error } = await sb
+    .from('contracts')
+    .update(payload)
+    .eq('contract_id', id);
+
+  if (error) return alert(error.message);
+
+  // 6) Refresh UI
+  await loadAll();
+  renderContracts();
+  renderDashboard();
+  document.getElementById('contractFormWrap').classList.add('d-none');
+}
+
 
     async function deleteContract(id){ if(!confirm('Xóa hợp đồng?')) return; const {error}=await sb.from('contracts').delete().eq('contract_id',id); if(error) return alert(error.message); await loadAll(); renderContracts(); renderDashboard(); }
 
@@ -691,6 +835,21 @@
 
     async function enforceAuth(){ try{ const { data:{ user } } = await sb.auth.getUser(); if(!user){ showAuthOverlay(); return; } const { data:prof, error } = await sb.from('user_profiles').select('role, active').eq('email', user.email).single(); if(error || !prof || !prof.active){ showAuthOverlay('email đăng nhập không thuộc hệ thống VSEC; hãy liên hệ admin'); await sb.auth.signOut(); return; } currentUser = { email:user.email, role: (prof.role||'user') }; document.getElementById('currentEmail').textContent = currentUser.email; hideAuthOverlay(); await loadAll(); applyRoleUI(); renderAll(); showSection('dashboard'); }catch(e){ console.error(e); showAuthOverlay('Không thể xác thực. Vui lòng thử lại.'); } }
 
+// Áp format tiền cho mọi input.money
+document.querySelectorAll('input.money').forEach(input => {
+  // Khi gõ: chỉ giữ chữ số rồi format
+  input.addEventListener('input', e => {
+    const digits = e.target.value.replace(/\D/g, '');
+    e.target.value = digits ? money(parseInt(digits, 10)) : '';
+  });
+  // Khi rời input: nếu trống thì để '0'
+  input.addEventListener('blur', e => {
+    if (!e.target.value) e.target.value = '0';
+  });
+});
+
+
+    
     function renderAll(){ renderDashboard(); renderCustomers(); /* services disabled */ renderProjects(); renderOpportunities(); renderQuotes(); renderContracts(); renderUsers(); }
 
     // Sign in with Google
