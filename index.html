@@ -282,7 +282,15 @@
           <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} khách hàng</h5>
           <div class="row g-3">
             <div class="col-md-2"><label class="form-label">ID</label><input class="form-control" disabled id="cust_id" value="${isEdit?c.id:generateCustomerId()}"></div>
-            <div class="col-md-10"><label class="form-label">Tên khách hàng</label><input class="form-control" id="cust_name" value="${c?.name||''}"></div>
+            <div class="col-md-10 position-relative">
+  <label class="form-label">Tên khách hàng</label>
+  <input class="form-control" id="cust_name"
+         value="${c?.name||''}"
+         autocomplete="off"
+         oninput="suggestExistingCustomer(this.value)"
+  >
+  <div id="cust_name_sugs" class="suggestions d-none"></div>
+</div>
             <div class="col-md-4"><label class="form-label">Người liên hệ</label><input class="form-control" id="cust_contact" value="${c?.contact_person||''}"></div>
             <div class="col-md-4"><label class="form-label">Phone</label><input class="form-control" id="cust_phone" value="${c?.phone||''}"></div>
             <div class="col-md-4"><label class="form-label">Email</label><input class="form-control" id="cust_email" value="${c?.email||''}"></div>
@@ -476,6 +484,57 @@
     async function deleteUser(id){ if(!confirm('Xóa user?')) return; const {error}=await sb.from('user_profiles').delete().eq('id',id); if(error) return alert(error.message); await loadAll(); renderUsers(); }
 
     /* 12) AUTOCOMPLETE HELPERS */
+    function suggestExistingCustomer(q) {
+  const box = document.getElementById('cust_name_sugs');
+  box.innerHTML = '';
+  if (!q) {
+    box.classList.add('d-none');
+    return;
+  }
+  // Tìm trong mảng customers (đã load từ Supabase)
+  const list = customers.filter(c =>
+    (c.name||'').toLowerCase().includes(q.toLowerCase()) ||
+    (c.id  ||'').toLowerCase().includes(q.toLowerCase())
+  );
+  if (list.length) {
+    list.forEach(c => {
+      const d = document.createElement('div');
+      d.className = 'suggestion-item';
+      d.textContent = `${c.id} – ${c.name}`;
+      d.onclick = () => {
+        // điền form với dữ liệu đã có
+        document.getElementById('cust_id').value          = c.id;
+        document.getElementById('cust_name').value        = c.name;
+        document.getElementById('cust_contact').value     = c.contact_person||'';
+        document.getElementById('cust_phone').value       = c.phone||'';
+        document.getElementById('cust_email').value       = c.email||'';
+        document.getElementById('cust_address').value     = c.address||'';
+        document.getElementById('cust_tax').value         = c.tax_code||'';
+        box.classList.add('d-none');
+      };
+      box.appendChild(d);
+    });
+  } else {
+    // Nếu không tìm thấy, cho nút Tạo mới
+    const d = document.createElement('div');
+    d.className = 'suggestion-item text-primary';
+    d.textContent = '+ Tạo khách hàng mới';
+    d.onclick = () => {
+      // quay lại form mới: reset hết ngoại trừ ID
+      const newId = generateCustomerId();
+      document.getElementById('cust_id').value      = newId;
+      document.getElementById('cust_name').value    = q;
+      document.getElementById('cust_contact').value = '';
+      document.getElementById('cust_phone').value   = '';
+      document.getElementById('cust_email').value   = '';
+      document.getElementById('cust_address').value = '';
+      document.getElementById('cust_tax').value     = '';
+      box.classList.add('d-none');
+    };
+    box.appendChild(d);
+  }
+  box.classList.remove('d-none');
+}
     function suggestCustomer(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=customers.filter(c=>(c.name||'').toLowerCase().includes(q.toLowerCase())||(c.id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(c=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=`${c.id} – ${c.name}`; d.onclick=()=>{ document.getElementById(fld).value=c.name; const hid=document.getElementById(`${fld}_id`); if(hid) hid.value=c.id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
     function suggestOpportunity(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=opportunities.filter(o=>(o.opportunity_id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(o=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=o.opportunity_id; d.onclick=()=>{ document.getElementById(fld).value=o.opportunity_id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
     function suggestProject(q, fld) {
