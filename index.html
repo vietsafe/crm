@@ -397,7 +397,8 @@
           <div class="row g-3">
             <div class="col-md-3"><label class="form-label">ID</label><input class="form-control" disabled id="q_id" value="${isEdit?q.quotes_id:generateQuoteId()}"></div>
             <div class="col-md-9 position-relative"><label class="form-label">Khách hàng</label><input class="form-control" id="q_client" autocomplete="off" value="${cust?.name||''}" oninput="suggestCustomer(this.value,'q_client')"><div id="q_client_sugs" class="suggestions d-none"></div><input type="hidden" id="q_client_id" value="${q?.customer_id||''}"></div>
-            <div class="col-md-6 position-relative"><label class="form-label">Dự án</label><input class="form-control" id="q_project" autocomplete="off" value="${pr?.project_name||''}" oninput="suggestProject(this.value,'q_project')"><div id="q_project_sugs" class="suggestions d-none"></div><input type="hidden" id="q_project_id" value="${q?.project_id||''}"></div>
+            <div class="col-md-6 position-relative"><label class="form-label">Dự án</label><input class="form-control" id="q_project" oninput="suggestProject(this.value,'q_project')" …>
+<div id="q_project_sugs" class="suggestions d-none"></div><input type="hidden" id="q_project_id" value="${q?.project_id||''}"></div>
             <div class="col-md-6"><label class="form-label">Số tiền</label><input type="number" class="form-control" id="q_amount" value="${q?.amount||0}"></div>
             <div class="col-12"><label class="form-label">Nội dung</label><textarea class="form-control" rows="2" id="q_desc">${q?.description||''}</textarea></div>
             <div class="col-md-6"><label class="form-label">Status</label><select class="form-select" id="q_status"><option${q?.status==='nháp'?' selected':''}>nháp</option><option${q?.status==='đã gửi'?' selected':''}>đã gửi</option><option${q?.status==='chấp nhận'?' selected':''}>chấp nhận</option><option${q?.status==='từ chối'?' selected':''}>từ chối</option></select></div>
