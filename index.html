@@ -787,7 +787,7 @@
               <td>
                 <div class="btn-group btn-group-sm">
                   ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmcrmcrmcrmcrmForms.customer('${c.id}')">
+                    <button class="btn btn-outline-secondary" onclick="crmForms.customer('${c.id}')">
                       <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-outline-danger" onclick="handlers.deleteCustomer('${c.id}')">
@@ -817,7 +817,7 @@
               <td>
                 <div class="btn-group btn-group-sm">
                   ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmcrmcrmcrmcrmForms.project('${p.project_id}')">
+                    <button class="btn btn-outline-secondary" onclick="crmForms.project('${p.project_id}')">
                       <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-outline-danger" onclick="handlers.deleteProject('${p.project_id}')">
@@ -846,7 +846,7 @@
               <td>
                 <div class="btn-group btn-group-sm">
                   ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmcrmcrmcrmcrmForms.opportunity('${o.opportunity_id}')">
+                    <button class="btn btn-outline-secondary" onclick="crmForms.opportunity('${o.opportunity_id}')">
                       <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-outline-danger" onclick="handlers.deleteOpportunity('${o.opportunity_id}')">
@@ -879,7 +879,7 @@
               <td>
                 <div class="btn-group btn-group-sm">
                   ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmcrmcrmcrmcrmForms.quote('${q.quotes_id}')">
+                    <button class="btn btn-outline-secondary" onclick="crmForms.quote('${q.quotes_id}')">
                       <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-outline-danger" onclick="handlers.deleteQuote('${q.quotes_id}')">
@@ -909,7 +909,7 @@
               <td>
                 <div class="btn-group btn-group-sm">
                   ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmcrmcrmcrmcrmForms.contract('${ct.contract_id}')">
+                    <button class="btn btn-outline-secondary" onclick="crmForms.contract('${ct.contract_id}')">
                       <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-outline-danger" onclick="handlers.deleteContract('${ct.contract_id}')">
@@ -936,7 +936,7 @@
             <td>${u.active ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-danger"></i>'}</td>
             <td>
               <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" onclick="crmcrmcrmcrmcrmForms.user('${u.id}')">
+                <button class="btn btn-outline-secondary" onclick="crmForms.user('${u.id}')">
                   <i class="bi bi-pencil-square"></i>
                 </button>
                 <button class="btn btn-outline-danger" onclick="handlers.deleteUser('${u.id}')">
@@ -1885,7 +1885,7 @@
           d.onclick = () => {
             box.classList.add('d-none');
             ui.showSection('projects');
-            crmcrmcrmcrmcrmForms.project();
+            crmForms.project();
             setTimeout(() => {
               document.getElementById('pr_client_id').value = custId;
               document.getElementById('pr_client').value = document.getElementById('q_client').value;
@@ -2018,12 +2018,12 @@
       });
       
       // Add buttons
-      document.getElementById('btnAddCustomer').onclick = () => crmcrmcrmcrmcrmForms.customer();
-      document.getElementById('btnAddProject').onclick = () => crmcrmcrmcrmcrmForms.project();
-      document.getElementById('btnAddOpportunity').onclick = () => crmcrmcrmcrmcrmForms.opportunity();
-      document.getElementById('btnAddQuote').onclick = () => crmcrmcrmcrmcrmForms.quote();
-      document.getElementById('btnAddContract').onclick = () => crmcrmcrmcrmcrmForms.contract();
-      document.getElementById('btnAddUser').onclick = () => crmcrmcrmcrmcrmForms.user();
+      document.getElementById('btnAddCustomer').onclick = () => crmForms.customer();
+      document.getElementById('btnAddProject').onclick = () => crmForms.project();
+      document.getElementById('btnAddOpportunity').onclick = () => crmForms.opportunity();
+      document.getElementById('btnAddQuote').onclick = () => crmForms.quote();
+      document.getElementById('btnAddContract').onclick = () => crmForms.contract();
+      document.getElementById('btnAddUser').onclick = () => crmForms.user();
       
       // Auth
       document.getElementById('btnGoogle').addEventListener('click', () => {
