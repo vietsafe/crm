@@ -605,6 +605,32 @@
           }
           localStorage.setItem('myCustomers', JSON.stringify(map));
         } catch {}
+      },
+      
+      // Track who created what
+      getCreatedBy(table) {
+        try {
+          const data = JSON.parse(localStorage.getItem(`createdBy_${table}`) || '{}');
+          return data;
+        } catch {
+          return {};
+        }
+      },
+      
+      setCreatedBy(table, id, email) {
+        try {
+          const data = this.getCreatedBy(table);
+          data[id] = email;
+          localStorage.setItem(`createdBy_${table}`, JSON.stringify(data));
+        } catch {}
+      },
+      
+      canEdit(table, id) {
+        const isElevated = ['admin', 'BOM'].includes(state.currentUser.role);
+        if (isElevated) return true;
+        
+        const createdBy = this.getCreatedBy(table);
+        return createdBy[id] === state.currentUser.email;
       }
     };
 
@@ -748,32 +774,38 @@
           list = state.customers.filter(c => allowedIds.includes(c.id));
         }
         
-        tbody.innerHTML = list.map(c => `
-          <tr>
-            <td>${c.id}</td>
-            <td class="text-start fw-medium">${c.name || ''}</td>
-            <td class="d-none d-md-table-cell">${c.contact_person || ''}</td>
-            <td class="d-none d-lg-table-cell">${c.phone || ''}</td>
-            <td class="d-none d-lg-table-cell">${c.email || ''}</td>
-            <td class="d-none d-xl-table-cell">${c.tax_code || ''}</td>
-            <td>
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" onclick="forms.customer('${c.id}')">
-                  <i class="bi bi-pencil-square"></i>
-                </button>
-                <button class="btn btn-outline-danger" onclick="handlers.deleteCustomer('${c.id}')">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = list.map(c => {
+          const canEdit = storage.canEdit('customers', c.id);
+          return `
+            <tr>
+              <td>${c.id}</td>
+              <td class="text-start fw-medium">${c.name || ''}</td>
+              <td class="d-none d-md-table-cell">${c.contact_person || ''}</td>
+              <td class="d-none d-lg-table-cell">${c.phone || ''}</td>
+              <td class="d-none d-lg-table-cell">${c.email || ''}</td>
+              <td class="d-none d-xl-table-cell">${c.tax_code || ''}</td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  ${canEdit ? `
+                    <button class="btn btn-outline-secondary" onclick="forms.customer('${c.id}')">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="handlers.deleteCustomer('${c.id}')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  ` : '<span class="text-muted small">Chỉ xem</span>'}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
       },
       
       projects() {
         const tbody = document.getElementById('projectTbody');
         tbody.innerHTML = state.projects.map(p => {
           const customer = state.cache.customerMap.get(p.customer_id);
+          const canEdit = storage.canEdit('projects', p.project_id);
           return `
             <tr>
               <td>${p.project_id}</td>
@@ -784,12 +816,14 @@
               <td><span class="badge bg-secondary">${p.status || ''}</span></td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-secondary" onclick="forms.project('${p.project_id}')">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                  <button class="btn btn-outline-danger" onclick="handlers.deleteProject('${p.project_id}')">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  ${canEdit ? `
+                    <button class="btn btn-outline-secondary" onclick="forms.project('${p.project_id}')">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="handlers.deleteProject('${p.project_id}')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  ` : '<span class="text-muted small">Chỉ xem</span>'}
                 </div>
               </td>
             </tr>
@@ -801,6 +835,7 @@
         const tbody = document.getElementById('oppTbody');
         tbody.innerHTML = state.opportunities.map(o => {
           const customer = state.cache.customerMap.get(o.customer_id);
+          const canEdit = storage.canEdit('opportunities', o.opportunity_id);
           return `
             <tr>
               <td>${o.opportunity_id}</td>
@@ -810,12 +845,14 @@
               <td><span class="badge bg-info">${o.stage || ''}</span></td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-secondary" onclick="forms.opportunity('${o.opportunity_id}')">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                  <button class="btn btn-outline-danger" onclick="handlers.deleteOpportunity('${o.opportunity_id}')">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  ${canEdit ? `
+                    <button class="btn btn-outline-secondary" onclick="forms.opportunity('${o.opportunity_id}')">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="handlers.deleteOpportunity('${o.opportunity_id}')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  ` : '<span class="text-muted small">Chỉ xem</span>'}
                 </div>
               </td>
             </tr>
@@ -828,6 +865,7 @@
         tbody.innerHTML = state.quotes.map(q => {
           const customer = state.cache.customerMap.get(q.customer_id);
           const project = state.cache.projectMap.get(q.project_id);
+          const canEdit = storage.canEdit('quotes', q.quotes_id);
           return `
             <tr>
               <td>${q.quotes_id}</td>
@@ -840,12 +878,14 @@
               <td class="d-none d-xl-table-cell">${q.pdf_url ? `<a href="${q.pdf_url}" target="_blank">PDF</a>` : ''}</td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-secondary" onclick="forms.quote('${q.quotes_id}')">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                  <button class="btn btn-outline-danger" onclick="handlers.deleteQuote('${q.quotes_id}')">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  ${canEdit ? `
+                    <button class="btn btn-outline-secondary" onclick="forms.quote('${q.quotes_id}')">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="handlers.deleteQuote('${q.quotes_id}')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  ` : '<span class="text-muted small">Chỉ xem</span>'}
                 </div>
               </td>
             </tr>
@@ -858,6 +898,7 @@
         tbody.innerHTML = state.contracts.map(ct => {
           const project = state.cache.projectMap.get(ct.project_id);
           const customer = state.cache.customerMap.get(ct.customer_id);
+          const canEdit = storage.canEdit('contracts', ct.contract_id);
           return `
             <tr>
               <td>${ct.contract_id}</td>
@@ -867,12 +908,14 @@
               <td><span class="badge bg-success">${ct.status || ''}</span></td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-secondary" onclick="forms.contract('${ct.contract_id}')">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                  <button class="btn btn-outline-danger" onclick="handlers.deleteContract('${ct.contract_id}')">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  ${canEdit ? `
+                    <button class="btn btn-outline-secondary" onclick="forms.contract('${ct.contract_id}')">
+                      <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="handlers.deleteContract('${ct.contract_id}')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  ` : '<span class="text-muted small">Chỉ xem</span>'}
                 </div>
               </td>
             </tr>
@@ -911,6 +954,13 @@
       customer(id = '') {
         const wrap = document.getElementById('customerFormWrap');
         const isEdit = !!id;
+        
+        // Check permission for edit
+        if (isEdit && !storage.canEdit('customers', id)) {
+          utils.showToast('Bạn không có quyền sửa khách hàng này', 'error');
+          return;
+        }
+        
         const c = isEdit ? state.customers.find(x => x.id === id) : {};
         
         wrap.classList.remove('d-none');
@@ -978,6 +1028,13 @@
       project(id = '') {
         const wrap = document.getElementById('projectFormWrap');
         const isEdit = !!id;
+        
+        // Check permission for edit
+        if (isEdit && !storage.canEdit('projects', id)) {
+          utils.showToast('Bạn không có quyền sửa dự án này', 'error');
+          return;
+        }
+        
         const p = isEdit ? state.projects.find(x => x.project_id === id) : {};
         const customer = state.cache.customerMap.get(p?.customer_id);
         
@@ -1050,6 +1107,13 @@
       opportunity(id = '') {
         const wrap = document.getElementById('oppFormWrap');
         const isEdit = !!id;
+        
+        // Check permission for edit
+        if (isEdit && !storage.canEdit('opportunities', id)) {
+          utils.showToast('Bạn không có quyền sửa cơ hội này', 'error');
+          return;
+        }
+        
         const o = isEdit ? state.opportunities.find(x => x.opportunity_id === id) : {};
         const customer = state.cache.customerMap.get(o?.customer_id);
         
@@ -1116,6 +1180,13 @@
       quote(id = '') {
         const wrap = document.getElementById('quoteFormWrap');
         const isEdit = !!id;
+        
+        // Check permission for edit
+        if (isEdit && !storage.canEdit('quotes', id)) {
+          utils.showToast('Bạn không có quyền sửa báo giá này', 'error');
+          return;
+        }
+        
         const q = isEdit ? state.quotes.find(x => x.quotes_id === id) : {};
         const customer = state.cache.customerMap.get(q?.customer_id);
         const project = state.cache.projectMap.get(q?.project_id);
@@ -1199,6 +1270,13 @@
       contract(id = '') {
         const wrap = document.getElementById('contractFormWrap');
         const isEdit = !!id;
+        
+        // Check permission for edit
+        if (isEdit && !storage.canEdit('contracts', id)) {
+          utils.showToast('Bạn không có quyền sửa hợp đồng này', 'error');
+          return;
+        }
+        
         const ct = isEdit ? state.contracts.find(x => x.contract_id === id) : {};
         const project = state.cache.projectMap.get(ct?.project_id);
         
@@ -1324,6 +1402,12 @@
     /* ===== CRUD HANDLERS ===== */
     const handlers = {
       async saveCustomer(id) {
+        // Check permission for edit
+        if (id && !storage.canEdit('customers', id)) {
+          utils.showToast('Bạn không có quyền sửa khách hàng này', 'error');
+          return;
+        }
+        
         const payload = {
           name: document.getElementById('cust_name').value.trim(),
           contact_person: document.getElementById('cust_contact').value || null,
@@ -1348,7 +1432,10 @@
           payload.id = document.getElementById('cust_id').value;
           payload.created_at = new Date().toISOString();
           success = await crud.create('customers', payload);
-          if (success) storage.pushMyCustomerId(payload.id);
+          if (success) {
+            storage.pushMyCustomerId(payload.id);
+            storage.setCreatedBy('customers', payload.id, state.currentUser.email);
+          }
         }
         
         stopLoading();
@@ -1361,6 +1448,12 @@
       },
       
       async saveProject(id) {
+        // Check permission for edit
+        if (id && !storage.canEdit('projects', id)) {
+          utils.showToast('Bạn không có quyền sửa dự án này', 'error');
+          return;
+        }
+        
         const payload = {
           project_name: document.getElementById('pr_name').value.trim(),
           customer_id: document.getElementById('pr_client_id').value,
@@ -1390,6 +1483,9 @@
           payload.project_id = document.getElementById('pr_id').value;
           payload.created_at = new Date().toISOString();
           success = await crud.create('projects', payload);
+          if (success) {
+            storage.setCreatedBy('projects', payload.project_id, state.currentUser.email);
+          }
         }
         
         stopLoading();
@@ -1402,6 +1498,12 @@
       },
       
       async saveOpportunity(id) {
+        // Check permission for edit
+        if (id && !storage.canEdit('opportunities', id)) {
+          utils.showToast('Bạn không có quyền sửa cơ hội này', 'error');
+          return;
+        }
+        
         const payload = {
           name: document.getElementById('op_name').value.trim(),
           customer_id: document.getElementById('op_client_id').value,
@@ -1429,6 +1531,9 @@
           payload.opportunity_id = document.getElementById('op_id').value;
           payload.created_at = new Date().toISOString();
           success = await crud.create('opportunities', payload);
+          if (success) {
+            storage.setCreatedBy('opportunities', payload.opportunity_id, state.currentUser.email);
+          }
         }
         
         stopLoading();
@@ -1441,6 +1546,12 @@
       },
       
       async saveQuote(id) {
+        // Check permission for edit
+        if (id && !storage.canEdit('quotes', id)) {
+          utils.showToast('Bạn không có quyền sửa báo giá này', 'error');
+          return;
+        }
+        
         const payload = {
           customer_id: document.getElementById('q_client_id').value,
           project_id: document.getElementById('q_project_id').value || null,
@@ -1466,6 +1577,9 @@
           payload.quotes_id = document.getElementById('q_id').value;
           payload.created_at = new Date().toISOString();
           success = await crud.create('quotes', payload);
+          if (success) {
+            storage.setCreatedBy('quotes', payload.quotes_id, state.currentUser.email);
+          }
         }
         
         stopLoading();
@@ -1477,6 +1591,12 @@
       },
       
       async saveContract(id) {
+        // Check permission for edit
+        if (id && !storage.canEdit('contracts', id)) {
+          utils.showToast('Bạn không có quyền sửa hợp đồng này', 'error');
+          return;
+        }
+        
         const projId = document.getElementById('ct_proj_id').value;
         const project = state.cache.projectMap.get(projId);
         
@@ -1504,6 +1624,9 @@
           payload.contract_id = document.getElementById('ct_id').value;
           payload.created_at = new Date().toISOString();
           success = await crud.create('contracts', payload);
+          if (success) {
+            storage.setCreatedBy('contracts', payload.contract_id, state.currentUser.email);
+          }
         }
         
         stopLoading();
@@ -1548,6 +1671,10 @@
       },
       
       async deleteCustomer(id) {
+        if (!storage.canEdit('customers', id)) {
+          utils.showToast('Bạn không có quyền xóa khách hàng này', 'error');
+          return;
+        }
         if (!confirm('Xóa khách hàng này?')) return;
         if (await crud.delete('customers', 'id', id)) {
           renderers.customers();
@@ -1556,6 +1683,10 @@
       },
       
       async deleteProject(id) {
+        if (!storage.canEdit('projects', id)) {
+          utils.showToast('Bạn không có quyền xóa dự án này', 'error');
+          return;
+        }
         if (!confirm('Xóa dự án này?')) return;
         if (await crud.delete('projects', 'project_id', id)) {
           renderers.projects();
@@ -1564,6 +1695,10 @@
       },
       
       async deleteOpportunity(id) {
+        if (!storage.canEdit('opportunities', id)) {
+          utils.showToast('Bạn không có quyền xóa cơ hội này', 'error');
+          return;
+        }
         if (!confirm('Xóa cơ hội này?')) return;
         if (await crud.delete('opportunities', 'opportunity_id', id)) {
           renderers.opportunities();
@@ -1572,6 +1707,10 @@
       },
       
       async deleteQuote(id) {
+        if (!storage.canEdit('quotes', id)) {
+          utils.showToast('Bạn không có quyền xóa báo giá này', 'error');
+          return;
+        }
         if (!confirm('Xóa báo giá này?')) return;
         if (await crud.delete('quotes', 'quotes_id', id)) {
           renderers.quotes();
@@ -1579,6 +1718,10 @@
       },
       
       async deleteContract(id) {
+        if (!storage.canEdit('contracts', id)) {
+          utils.showToast('Bạn không có quyền xóa hợp đồng này', 'error');
+          return;
+        }
         if (!confirm('Xóa hợp đồng này?')) return;
         if (await crud.delete('contracts', 'contract_id', id)) {
           renderers.contracts();
