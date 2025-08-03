@@ -2,12 +2,14 @@
 <html lang="vi">
 <head>
   <!-- =========================================================
-       CRM Bootstrap Full – Single HTML (Modified per request 2025-07-28)
-       Changes:
-       - Disable Services module (hidden UI, no render calls).
-       - Role-based access: admin/BOM = full; user = Dashboard, Customers (limited view), Quotes, Contracts.
-       - Quotes simplified: ID, customer, project, description, amount, status, send_count, pdf_url.
-       - Keep all other parts intact.
+       CRM Bootstrap Full – Improved Version
+       Improvements:
+       - Better mobile responsive
+       - Performance optimization with caching
+       - DRY principle applied
+       - Debounced search
+       - Loading states
+       - Better error handling
        ========================================================= -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -21,41 +23,273 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
-    html, body { height: 100%; background-color: #f8f9fa; }
-    .sidebar { width: 280px; min-height: 100vh; position: sticky; top: 0; left: 0; border-right: 1px solid #e9ecef; background:#fff; }
-    .sidebar .nav-link { border-radius: .5rem; color: #334155; }
-    .sidebar .nav-link.active, .sidebar .nav-link:hover { background-color: #e7f1ff; color: #0d6efd; }
-    .content-wrap { margin-left: 0; }
-    @media (min-width: 992px) { .content-wrap { margin-left: 280px; } .sidebar { position: fixed; } }
-    .card-shadow { box-shadow: 0 8px 24px rgba(0,0,0,.06); border:1px solid #eef2f7; border-radius:1rem; }
+    :root {
+      --sidebar-width: 280px;
+      --primary-color: #0d6efd;
+      --hover-bg: #e7f1ff;
+      --border-color: #e9ecef;
+      --shadow: 0 8px 24px rgba(0,0,0,.06);
+    }
 
-    .suggestions { position:absolute; z-index:1050; background:#fff; border:1px solid #e5e7eb; border-radius:.5rem; max-height:260px; overflow-y:auto; width:100%; box-shadow:0 10px 22px rgba(0,0,0,.08); }
-    .suggestion-item { padding:.5rem .75rem; cursor:pointer; }
-    .suggestion-item:hover { background:#f5f7fb; }
+    * { box-sizing: border-box; }
+    
+    html, body { 
+      height: 100%; 
+      background-color: #f8f9fa; 
+      font-size: 14px;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar { 
+      width: var(--sidebar-width); 
+      min-height: 100vh; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      border-right: 1px solid var(--border-color); 
+      background: #fff; 
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1040;
+    }
+    
+    .sidebar.show { transform: translateX(0); }
+    
+    .sidebar .nav-link { 
+      border-radius: .5rem; 
+      color: #334155; 
+      transition: all 0.2s ease;
+    }
+    
+    .sidebar .nav-link.active, 
+    .sidebar .nav-link:hover { 
+      background-color: var(--hover-bg); 
+      color: var(--primary-color); 
+    }
+    
+    /* Content Wrapper */
+    .content-wrap { 
+      margin-left: 0; 
+      transition: margin-left 0.3s ease;
+      min-height: 100vh;
+    }
+    
+    /* Desktop Styles */
+    @media (min-width: 992px) { 
+      .sidebar { transform: translateX(0); }
+      .content-wrap { margin-left: var(--sidebar-width); }
+      .mobile-header { display: none; }
+    }
+    
+    /* Mobile Header */
+    .mobile-header {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1rem;
+    }
+    
+    /* Card Styles */
+    .card-shadow { 
+      box-shadow: var(--shadow); 
+      border: 1px solid #eef2f7; 
+      border-radius: 1rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .card-shadow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0,0,0,.08);
+    }
 
-    .section-anchor { scroll-margin-top: 80px; }
+    /* Autocomplete Styles */
+    .suggestions { 
+      position: absolute; 
+      z-index: 1050; 
+      background: #fff; 
+      border: 1px solid #e5e7eb; 
+      border-radius: .5rem; 
+      max-height: 260px; 
+      overflow-y: auto; 
+      width: 100%; 
+      box-shadow: 0 10px 22px rgba(0,0,0,.08);
+      margin-top: 2px;
+    }
+    
+    .suggestion-item { 
+      padding: .75rem 1rem; 
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    
+    .suggestion-item:hover,
+    .suggestion-item.active { 
+      background: #f5f7fb; 
+    }
 
-    .auth-overlay{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(15,23,42,.55); backdrop-filter:blur(2px); z-index:3000;}
-    .auth-card{width:420px; border-radius:1rem; box-shadow:0 20px 40px rgba(0,0,0,.2);}  
+    /* Form Improvements */
+    .form-control, .form-select {
+      font-size: 14px;
+      padding: 0.5rem 0.75rem;
+    }
+    
+    .form-label {
+      font-weight: 500;
+      color: #475569;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Table Responsive */
+    .table-responsive {
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    
+    .table {
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+    
+    .table th {
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      padding: 0.75rem;
+    }
+    
+    /* Mobile Table */
+    @media (max-width: 768px) {
+      .table-responsive {
+        font-size: 12px;
+      }
+      
+      .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 12px;
+      }
+      
+      .table td {
+        padding: 0.5rem;
+      }
+    }
+
+    /* Loading State */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,.1);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Overlay */
+    .overlay {
+      position: fixed; 
+      inset: 0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: rgba(15,23,42,.55); 
+      backdrop-filter: blur(2px); 
+      z-index: 3000;
+    }
+    
+    .overlay-card {
+      width: min(420px, 90vw); 
+      border-radius: 1rem; 
+      box-shadow: 0 20px 40px rgba(0,0,0,.2);
+    }
+    
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Section Spacing */
+    .section-anchor { 
+      scroll-margin-top: 80px; 
+    }
+    
+    /* Button Groups */
+    .btn-group-sm > .btn {
+      padding: 0.25rem 0.5rem;
+    }
+    
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1080;
+    }
+    
+    /* Backdrop for mobile */
+    .sidebar-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1039;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+    }
+    
+    .sidebar-backdrop.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
 
-  <!-- ===== AUTH OVERLAY (Google + whitelist user_profiles) ===== -->
-  <div id="authOverlay" class="auth-overlay d-none">
-    <div class="card auth-card">
+  <!-- Toast Container -->
+  <div class="toast-container"></div>
+
+  <!-- Mobile Header -->
+  <div class="mobile-header d-lg-none">
+    <div class="d-flex align-items-center justify-content-between">
+      <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <span class="fw-bold">CRM Admin</span>
+      <img src="https://ui-avatars.com/api/?name=CRM&background=0D6EFD&color=fff" alt="" width="32" height="32" class="rounded-circle">
+    </div>
+  </div>
+
+  <!-- Sidebar Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- ===== AUTH OVERLAY ===== -->
+  <div id="authOverlay" class="overlay d-none">
+    <div class="card overlay-card fade-in">
       <div class="card-body text-center p-4">
         <div class="mb-3"><i class="bi bi-shield-lock" style="font-size:2.5rem;"></i></div>
         <h5 class="fw-bold mb-2">Đăng nhập VSEC CRM</h5>
         <p class="text-muted small mb-4">Chỉ chấp nhận email nằm trong bảng <code>user_profiles</code> và <code>active = true</code>.</p>
-        <button id="btnGoogle" class="btn btn-dark w-100 mb-2"><i class="bi bi-google me-2"></i>Đăng nhập với Google</button>
+        <button id="btnGoogle" class="btn btn-dark w-100 mb-2">
+          <i class="bi bi-google me-2"></i>Đăng nhập với Google
+        </button>
         <div id="authError" class="text-danger small mt-2"></div>
       </div>
     </div>
   </div>
 
   <!-- ========================= SIDEBAR ========================= -->
-  <aside class="sidebar p-3">
+  <aside class="sidebar p-3" id="sidebar">
     <a class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
       <span class="fs-5 fw-bold"><i class="bi bi-layout-text-sidebar-reverse me-2"></i>CRM Admin</span>
     </a>
@@ -63,7 +297,6 @@
     <ul class="nav nav-pills flex-column gap-1" id="sidebarNav">
       <li class="nav-item"><a class="nav-link active" data-page="dashboard"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
       <li class="nav-item"><a class="nav-link" data-page="customers"><i class="bi bi-people me-2"></i>Customers</a></li>
-      <!-- Services DISABLED -->
       <li class="nav-item" id="navServices" style="display:none"><a class="nav-link" data-page="services"><i class="bi bi-box-seam me-2"></i>Services</a></li>
       <li class="nav-item"><a class="nav-link" data-page="projects"><i class="bi bi-kanban me-2"></i>Projects</a></li>
       <li class="nav-item"><a class="nav-link" data-page="opportunities"><i class="bi bi-bullseye me-2"></i>Opportunities</a></li>
@@ -85,50 +318,50 @@
 
   <!-- ========================= MAIN ========================= -->
   <main class="content-wrap">
-    <div class="container-fluid py-4">
+    <div class="container-fluid py-3 py-lg-4">
 
       <!-- DASHBOARD -->
       <section id="page-dashboard" class="section-anchor">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
         </div>
-        <div class="row g-4">
-          <div class="col-12 col-sm-6 col-lg-3"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1">Customers</h6><h2 class="fw-bold mb-0" id="kpiCustomers">0</h2></div></div></div>
-          <div class="col-12 col-sm-6 col-lg-3" id="kpiServicesWrap" style="display:none"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1">Services</h6><h2 class="fw-bold mb-0" id="kpiServices">0</h2></div></div></div>
-          <div class="col-12 col-sm-6 col-lg-3"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1">Projects</h6><h2 class="fw-bold mb-0" id="kpiProjects">0</h2></div></div></div>
-          <div class="col-12 col-sm-6 col-lg-3"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1">Opportunities</h6><h2 class="fw-bold mb-0" id="kpiOpportunities">0</h2></div></div></div>
+        <div class="row g-3">
+          <div class="col-6 col-lg-3"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1 small">Customers</h6><h2 class="fw-bold mb-0" id="kpiCustomers">0</h2></div></div></div>
+          <div class="col-6 col-lg-3" id="kpiServicesWrap" style="display:none"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1 small">Services</h6><h2 class="fw-bold mb-0" id="kpiServices">0</h2></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1 small">Projects</h6><h2 class="fw-bold mb-0" id="kpiProjects">0</h2></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card card-shadow"><div class="card-body"><h6 class="text-secondary text-uppercase mb-1 small">Opportunities</h6><h2 class="fw-bold mb-0" id="kpiOpportunities">0</h2></div></div></div>
         </div>
-        <div class="card card-shadow mt-4"><div class="card-body"><div class="text-secondary">Tổng giá trị cơ hội: <span class="fw-bold" id="kpiOppValue">0</span></div></div></div>
+        <div class="card card-shadow mt-3"><div class="card-body"><div class="text-secondary">Tổng giá trị cơ hội: <span class="fw-bold" id="kpiOppValue">0</span></div></div></div>
       </section>
 
       <!-- CUSTOMERS -->
       <section id="page-customers" class="section-anchor d-none">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-people me-2"></i>Customers</h1>
-          <div class="ms-auto"><button class="btn btn-primary" id="btnAddCustomer"><i class="bi bi-plus-lg me-1"></i>Thêm khách hàng</button></div>
+          <div class="ms-auto"><button class="btn btn-primary btn-sm" id="btnAddCustomer"><i class="bi bi-plus-lg me-1"></i>Thêm KH</button></div>
         </div>
         <div id="customerFormWrap" class="d-none"></div>
-        <div class="card card-shadow"><div class="card-body table-responsive">
-          <table class="table table-hover table-sm align-middle">
-            <thead class="table-light"><tr><th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>Tax</th><th style="width:120px;">Actions</th></tr></thead>
+        <div class="card card-shadow"><div class="card-body p-0 table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>ID</th><th>Name</th><th class="d-none d-md-table-cell">Contact</th><th class="d-none d-lg-table-cell">Phone</th><th class="d-none d-lg-table-cell">Email</th><th class="d-none d-xl-table-cell">Tax</th><th style="width:100px;">Actions</th></tr></thead>
             <tbody id="customerTbody"></tbody>
           </table>
         </div></div>
       </section>
 
-      <!-- SERVICES (DISABLED UI) -->
+      <!-- SERVICES (DISABLED) -->
       <section id="page-services" class="section-anchor d-none"></section>
 
       <!-- PROJECTS -->
       <section id="page-projects" class="section-anchor d-none">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-kanban me-2"></i>Projects</h1>
-          <div class="ms-auto"><button class="btn btn-primary" id="btnAddProject"><i class="bi bi-plus-lg me-1"></i>Thêm dự án</button></div>
+          <div class="ms-auto"><button class="btn btn-primary btn-sm" id="btnAddProject"><i class="bi bi-plus-lg me-1"></i>Thêm dự án</button></div>
         </div>
         <div id="projectFormWrap" class="d-none"></div>
-        <div class="card card-shadow"><div class="card-body table-responsive">
-          <table class="table table-hover table-sm align-middle">
-            <thead class="table-light"><tr><th>ID</th><th>Tên dự án</th><th>Khách hàng</th><th>Start</th><th>End</th><th>Status</th><th style="width:120px;">Actions</th></tr></thead>
+        <div class="card card-shadow"><div class="card-body p-0 table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>ID</th><th>Tên dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th class="d-none d-lg-table-cell">Start</th><th class="d-none d-lg-table-cell">End</th><th>Status</th><th style="width:100px;">Actions</th></tr></thead>
             <tbody id="projectTbody"></tbody>
           </table>
         </div></div>
@@ -138,37 +371,37 @@
       <section id="page-opportunities" class="section-anchor d-none">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-bullseye me-2"></i>Opportunities</h1>
-          <div class="ms-auto"><button class="btn btn-primary" id="btnAddOpportunity"><i class="bi bi-plus-lg me-1"></i>Thêm cơ hội</button></div>
+          <div class="ms-auto"><button class="btn btn-primary btn-sm" id="btnAddOpportunity"><i class="bi bi-plus-lg me-1"></i>Thêm cơ hội</button></div>
         </div>
         <div id="oppFormWrap" class="d-none"></div>
-        <div class="card card-shadow"><div class="card-body table-responsive">
-          <table class="table table-hover table-sm align-middle">
-            <thead class="table-light"><tr><th>ID</th><th>Tên cơ hội</th><th>Khách hàng</th><th>Giá trị</th><th>Stage</th><th style="width:120px;">Actions</th></tr></thead>
+        <div class="card card-shadow"><div class="card-body p-0 table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>ID</th><th>Tên cơ hội</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Stage</th><th style="width:100px;">Actions</th></tr></thead>
             <tbody id="oppTbody"></tbody>
           </table>
         </div></div>
       </section>
 
-      <!-- QUOTES (SIMPLIFIED) -->
+      <!-- QUOTES -->
       <section id="page-quotes" class="section-anchor d-none">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-receipt me-2"></i>Quotes</h1>
-          <div class="ms-auto"><button class="btn btn-primary" id="btnAddQuote"><i class="bi bi-plus-lg me-1"></i>Thêm báo giá</button></div>
+          <div class="ms-auto"><button class="btn btn-primary btn-sm" id="btnAddQuote"><i class="bi bi-plus-lg me-1"></i>Thêm báo giá</button></div>
         </div>
         <div id="quoteFormWrap" class="d-none"></div>
-        <div class="card card-shadow"><div class="card-body table-responsive">
-          <table class="table table-hover table-sm align-middle">
+        <div class="card card-shadow"><div class="card-body p-0 table-responsive">
+          <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
                 <th>ID</th>
-                <th>Khách hàng</th>
-                <th>Dự án</th>
+                <th class="d-none d-md-table-cell">Khách hàng</th>
+                <th class="d-none d-lg-table-cell">Dự án</th>
                 <th class="text-start">Nội dung</th>
                 <th>Số tiền</th>
-                <th>Status</th>
-                <th>Lần gửi</th>
-                <th>PDF</th>
-                <th style="width:140px;">Actions</th>
+                <th class="d-none d-md-table-cell">Status</th>
+                <th class="d-none d-lg-table-cell">Lần gửi</th>
+                <th class="d-none d-xl-table-cell">PDF</th>
+                <th style="width:100px;">Actions</th>
               </tr>
             </thead>
             <tbody id="quoteTbody"></tbody>
@@ -180,12 +413,12 @@
       <section id="page-contracts" class="section-anchor d-none">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-file-earmark-text me-2"></i>Contracts</h1>
-          <div class="ms-auto"><button class="btn btn-primary" id="btnAddContract"><i class="bi bi-plus-lg me-1"></i>Thêm hợp đồng</button></div>
+          <div class="ms-auto"><button class="btn btn-primary btn-sm" id="btnAddContract"><i class="bi bi-plus-lg me-1"></i>Thêm HĐ</button></div>
         </div>
         <div id="contractFormWrap" class="d-none"></div>
-        <div class="card card-shadow"><div class="card-body table-responsive">
-          <table class="table table-hover table-sm align-middle">
-            <thead class="table-light"><tr><th>ID</th><th>Dự án</th><th>Khách hàng</th><th>Giá trị</th><th>Status</th><th style="width:140px;">Actions</th></tr></thead>
+        <div class="card card-shadow"><div class="card-body p-0 table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>ID</th><th>Dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Status</th><th style="width:100px;">Actions</th></tr></thead>
             <tbody id="contractTbody"></tbody>
           </table>
         </div></div>
@@ -195,12 +428,12 @@
       <section id="page-users" class="section-anchor d-none">
         <div class="d-flex align-items-center mb-4">
           <h1 class="h3 mb-0"><i class="bi bi-person-gear me-2"></i>Users</h1>
-          <div class="ms-auto"><button class="btn btn-primary" id="btnAddUser"><i class="bi bi-plus-lg me-1"></i>Thêm user</button></div>
+          <div class="ms-auto"><button class="btn btn-primary btn-sm" id="btnAddUser"><i class="bi bi-plus-lg me-1"></i>Thêm user</button></div>
         </div>
         <div id="userFormWrap" class="d-none"></div>
-        <div class="card card-shadow"><div class="card-body table-responsive">
-          <table class="table table-hover table-sm align-middle">
-            <thead class="table-light"><tr><th>Email</th><th>Role</th><th>Active</th><th style="width:140px;">Actions</th></tr></thead>
+        <div class="card card-shadow"><div class="card-body p-0 table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Email</th><th>Role</th><th>Active</th><th style="width:100px;">Actions</th></tr></thead>
             <tbody id="userTbody"></tbody>
           </table>
         </div></div>
@@ -211,418 +444,1503 @@
 
   <!-- ========================= SCRIPTS ========================= -->
   <script>
-    /* 0) SUPABASE CONFIG */
-    const SUPABASE_URL = 'https://sdmjdhmkjyadgyfodpsf.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbWpkaG1ranlhZGd5Zm9kcHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2ODQyNjIsImV4cCI6MjA2OTI2MDI2Mn0.Org3PD8CNmqCxC8ylbNiPA5Guo0w0srXgxyF2s2ZHG0';
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    /* ===== CONFIGURATION ===== */
+    const CONFIG = {
+      SUPABASE_URL: 'https://sdmjdhmkjyadgyfodpsf.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkbWpkaG1ranlhZGd5Zm9kcHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2ODQyNjIsImV4cCI6MjA2OTI2MDI2Mn0.Org3PD8CNmqCxC8ylbNiPA5Guo0w0srXgxyF2s2ZHG0',
+      DEBOUNCE_DELAY: 300,
+      TOAST_DURATION: 3000
+    };
 
-    /* 1) STATE */
-    let currentUser = { email: null, role: 'user' };
-    let customers = [], services = [], projects = [], opportunities = [], quotes = [], contracts = [], users = [];
+    /* ===== SUPABASE CLIENT ===== */
+    const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
-    /* Helpers */
-    const pad = (n,w)=> (n+'').padStart(w,'0');
-    function getWeekNumber(date=new Date()){ const d=new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const dayNum=d.getUTCDay()||7; d.setUTCDate(d.getUTCDate()+4-dayNum); const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1)); return Math.ceil((((d-yearStart)/86400000)+1)/7); }
-    function money(n){ return (n||0).toLocaleString('vi-VN'); }
+    /* ===== APPLICATION STATE ===== */
+    const state = {
+      currentUser: { email: null, role: 'user' },
+      customers: [],
+      services: [],
+      projects: [],
+      opportunities: [],
+      quotes: [],
+      contracts: [],
+      users: [],
+      cache: {
+        customerMap: new Map(),
+        projectMap: new Map()
+      }
+    };
 
-    function generateCustomerId(){ const used=customers.map(c=>parseInt((c.id||'').slice(1),10)).filter(Number.isFinite); for(let i=1;i<10000;i++) if(!used.includes(i)) return 'C'+pad(i,4); throw new Error('Hết mã khách hàng'); }
-    function generateProjectId(){ const y=new Date().getFullYear().toString().slice(-2); const used=projects.filter(p=>(p.project_id||'').startsWith('P_'+y)).map(p=>parseInt(p.project_id.slice(4),10)).filter(Number.isFinite); for(let i=1;i<1000;i++) if(!used.includes(i)) return 'P_'+y+pad(i,3); throw new Error('Hết mã dự án'); }
-    function generateOpportunityId(){ const used=opportunities.map(o=>parseInt((o.opportunity_id||'').split('_')[1],10)).filter(Number.isFinite); for(let i=1;i<100000;i++) if(!used.includes(i)) return 'Op_'+pad(i,5); throw new Error('Hết mã cơ hội'); }
-    function generateQuoteId(){ const now=new Date(); const y=now.getFullYear().toString().slice(-2); const w=pad(getWeekNumber(now),2); const used=quotes.filter(q=>(q.quotes_id||'').startsWith(`Q_${y}${w}`)).map(q=>parseInt(q.quotes_id.slice(6),10)).filter(Number.isFinite); for(let i=1;i<=99;i++) if(!used.includes(i)) return `Q_${y}${w}${pad(i,2)}`; throw new Error('Hết mã báo giá'); }
-    function generateContractId(){ const now=new Date(); const y=now.getFullYear().toString().slice(-2); const w=pad(getWeekNumber(now),2); const used=contracts.filter(c=>(c.contract_id||'').startsWith(`HD_${y}${w}`)).map(c=>parseInt(c.contract_id.slice(7),10)).filter(Number.isFinite); for(let i=1;i<=99;i++) if(!used.includes(i)) return `HD_${y}${w}${pad(i,2)}`; throw new Error('Hết mã hợp đồng'); }
+    /* ===== UTILITY FUNCTIONS ===== */
+    const utils = {
+      pad: (n, w) => String(n).padStart(w, '0'),
+      
+      getWeekNumber(date = new Date()) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      },
+      
+      money: (n) => (n || 0).toLocaleString('vi-VN'),
+      
+      debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      },
+      
+      showToast(message, type = 'success') {
+        const toastContainer = document.querySelector('.toast-container');
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0 fade show`;
+        toastEl.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+          </div>
+        `;
+        toastContainer.appendChild(toastEl);
+        setTimeout(() => toastEl.remove(), CONFIG.TOAST_DURATION);
+      },
+      
+      showLoading(element) {
+        const originalContent = element.innerHTML;
+        element.innerHTML = '<div class="loading mx-auto"></div>';
+        element.disabled = true;
+        return () => {
+          element.innerHTML = originalContent;
+          element.disabled = false;
+        };
+      }
+    };
 
-    // Local storage for restricting Customers visibility for normal users
-    function getMyCustomerIds(){ try{ const map = JSON.parse(localStorage.getItem('myCustomers')||'{}'); return map[currentUser.email] || []; }catch{ return []; } }
-    function pushMyCustomerId(id){ try{ const map = JSON.parse(localStorage.getItem('myCustomers')||'{}'); map[currentUser.email] = map[currentUser.email] || []; if(!map[currentUser.email].includes(id)) map[currentUser.email].push(id); localStorage.setItem('myCustomers', JSON.stringify(map)); }catch{} }
+    /* ===== ID GENERATORS ===== */
+    const generators = {
+      customerId() {
+        const used = state.customers.map(c => parseInt(c.id?.slice(1), 10)).filter(Number.isFinite);
+        for (let i = 1; i < 10000; i++) {
+          if (!used.includes(i)) return 'C' + utils.pad(i, 4);
+        }
+        throw new Error('Hết mã khách hàng');
+      },
+      
+      projectId() {
+        const y = new Date().getFullYear().toString().slice(-2);
+        const used = state.projects
+          .filter(p => p.project_id?.startsWith('P_' + y))
+          .map(p => parseInt(p.project_id.slice(4), 10))
+          .filter(Number.isFinite);
+        for (let i = 1; i < 1000; i++) {
+          if (!used.includes(i)) return 'P_' + y + utils.pad(i, 3);
+        }
+        throw new Error('Hết mã dự án');
+      },
+      
+      opportunityId() {
+        const used = state.opportunities
+          .map(o => parseInt(o.opportunity_id?.split('_')[1], 10))
+          .filter(Number.isFinite);
+        for (let i = 1; i < 100000; i++) {
+          if (!used.includes(i)) return 'Op_' + utils.pad(i, 5);
+        }
+        throw new Error('Hết mã cơ hội');
+      },
+      
+      quoteId() {
+        const now = new Date();
+        const y = now.getFullYear().toString().slice(-2);
+        const w = utils.pad(utils.getWeekNumber(now), 2);
+        const prefix = `Q_${y}${w}`;
+        const used = state.quotes
+          .filter(q => q.quotes_id?.startsWith(prefix))
+          .map(q => parseInt(q.quotes_id.slice(6), 10))
+          .filter(Number.isFinite);
+        for (let i = 1; i <= 99; i++) {
+          if (!used.includes(i)) return prefix + utils.pad(i, 2);
+        }
+        throw new Error('Hết mã báo giá');
+      },
+      
+      contractId() {
+        const now = new Date();
+        const y = now.getFullYear().toString().slice(-2);
+        const w = utils.pad(utils.getWeekNumber(now), 2);
+        const prefix = `HD_${y}${w}`;
+        const used = state.contracts
+          .filter(c => c.contract_id?.startsWith(prefix))
+          .map(c => parseInt(c.contract_id.slice(7), 10))
+          .filter(Number.isFinite);
+        for (let i = 1; i <= 99; i++) {
+          if (!used.includes(i)) return prefix + utils.pad(i, 2);
+        }
+        throw new Error('Hết mã hợp đồng');
+      }
+    };
 
-    function showSection(page){ document.querySelectorAll('[id^="page-"]').forEach(el=>el.classList.add('d-none')); document.getElementById(`page-${page}`).classList.remove('d-none'); document.querySelectorAll('.sidebar .nav-link').forEach(a=>{ if(a.dataset.page===page) a.classList.add('active'); else a.classList.remove('active'); }); }
-    function setKPIs(){ document.getElementById('kpiCustomers').textContent = customers.length; const sw=document.getElementById('kpiServicesWrap'); if(sw) sw.style.display='none'; document.getElementById('kpiProjects').textContent = projects.length; document.getElementById('kpiOpportunities').textContent = opportunities.length; const totalVal = opportunities.reduce((s,o)=>s+(o.expected_value||0),0); document.getElementById('kpiOppValue').textContent = money(totalVal) + ' đ'; }
-    document.addEventListener('click',(e)=>{ if(!e.target.closest('.suggestions') && !e.target.closest('input')) document.querySelectorAll('.suggestions').forEach(b=>b.classList.add('d-none')); });
+    /* ===== LOCAL STORAGE HELPERS ===== */
+    const storage = {
+      getMyCustomerIds() {
+        try {
+          const map = JSON.parse(localStorage.getItem('myCustomers') || '{}');
+          return map[state.currentUser.email] || [];
+        } catch {
+          return [];
+        }
+      },
+      
+      pushMyCustomerId(id) {
+        try {
+          const map = JSON.parse(localStorage.getItem('myCustomers') || '{}');
+          map[state.currentUser.email] = map[state.currentUser.email] || [];
+          if (!map[state.currentUser.email].includes(id)) {
+            map[state.currentUser.email].push(id);
+          }
+          localStorage.setItem('myCustomers', JSON.stringify(map));
+        } catch {}
+      }
+    };
 
-    /* 3) LOAD DATA */
-    async function loadAll(){ const rs = await Promise.all([
-        sb.from('customers').select('*').order('id'),
-        // services disabled
-        sb.from('projects').select('*').order('project_id'),
-        sb.from('opportunities').select('*').order('opportunity_id'),
-        sb.from('quotes').select('*').order('quotes_id'),
-        sb.from('contracts').select('*').order('contract_id'),
-        sb.from('user_profiles').select('*')
-      ]);
-      customers = rs[0].data || [];
-      services = []; // disabled
-      projects = rs[1].data || [];
-      opportunities = rs[2].data || [];
-      quotes = rs[3].data || [];
-      contracts = rs[4].data || [];
-      users = rs[5].data || [];
+    /* ===== UI HELPERS ===== */
+    const ui = {
+      showSection(page) {
+        document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('d-none'));
+        const section = document.getElementById(`page-${page}`);
+        if (section) {
+          section.classList.remove('d-none');
+          section.classList.add('fade-in');
+        }
+        
+        document.querySelectorAll('.sidebar .nav-link').forEach(a => {
+          if (a.dataset.page === page) {
+            a.classList.add('active');
+          } else {
+            a.classList.remove('active');
+          }
+        });
+        
+        // Close mobile sidebar
+        if (window.innerWidth < 992) {
+          ui.toggleSidebar(false);
+        }
+      },
+      
+      toggleSidebar(show) {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        
+        if (show === undefined) {
+          show = !sidebar.classList.contains('show');
+        }
+        
+        if (show) {
+          sidebar.classList.add('show');
+          backdrop.classList.add('show');
+        } else {
+          sidebar.classList.remove('show');
+          backdrop.classList.remove('show');
+        }
+      },
+      
+      setKPIs() {
+        document.getElementById('kpiCustomers').textContent = state.customers.length;
+        document.getElementById('kpiProjects').textContent = state.projects.length;
+        document.getElementById('kpiOpportunities').textContent = state.opportunities.length;
+        const totalValue = state.opportunities.reduce((sum, o) => sum + (o.expected_value || 0), 0);
+        document.getElementById('kpiOppValue').textContent = utils.money(totalValue) + ' đ';
+      }
+    };
+
+    /* ===== DATA LOADING ===== */
+    async function loadData() {
+      try {
+        const [customersRes, projectsRes, opportunitiesRes, quotesRes, contractsRes, usersRes] = await Promise.all([
+          sb.from('customers').select('*').order('id'),
+          sb.from('projects').select('*').order('project_id'),
+          sb.from('opportunities').select('*').order('opportunity_id'),
+          sb.from('quotes').select('*').order('quotes_id'),
+          sb.from('contracts').select('*').order('contract_id'),
+          sb.from('user_profiles').select('*')
+        ]);
+
+        state.customers = customersRes.data || [];
+        state.projects = projectsRes.data || [];
+        state.opportunities = opportunitiesRes.data || [];
+        state.quotes = quotesRes.data || [];
+        state.contracts = contractsRes.data || [];
+        state.users = usersRes.data || [];
+
+        // Update cache
+        state.cache.customerMap.clear();
+        state.customers.forEach(c => state.cache.customerMap.set(c.id, c));
+        
+        state.cache.projectMap.clear();
+        state.projects.forEach(p => state.cache.projectMap.set(p.project_id, p));
+        
+      } catch (error) {
+        console.error('Error loading data:', error);
+        utils.showToast('Lỗi khi tải dữ liệu', 'error');
+      }
     }
 
-    /* 4) RENDERERS */
-    function renderDashboard(){ setKPIs(); }
-
-    function renderCustomers(){ const tbody=document.getElementById('customerTbody'); let list = customers; const elevated = ['admin','BOM'].includes(currentUser.role); if(!elevated){ const ids=getMyCustomerIds(); list = customers.filter(c=>ids.includes(c.id)); } tbody.innerHTML = list.map(c=>`
-        <tr>
-          <td>${c.id}</td>
-          <td class="text-start">${c.name||''}</td>
-          <td>${c.contact_person||''}</td>
-          <td>${c.phone||''}</td>
-          <td>${c.email||''}</td>
-          <td>${c.tax_code||''}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openCustomerForm('${c.id}')"><i class="bi bi-pencil-square"></i></button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('${c.id}')"><i class="bi bi-trash"></i></button>
-          </td>
-        </tr>
-      `).join(''); }
-
-    function openCustomerForm(id=''){
-      const wrap=document.getElementById('customerFormWrap'); const isEdit=!!id; const c=isEdit?customers.find(x=>x.id===id):{}; wrap.classList.remove('d-none'); wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });wrap.innerHTML=`
-        <div class="card card-shadow mb-4"><div class="card-body">
-          <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} khách hàng</h5>
-          <div class="row g-3">
-            <div class="col-md-2"><label class="form-label">ID</label><input class="form-control" disabled id="cust_id" value="${isEdit?c.id:generateCustomerId()}"></div>
-            <div class="col-md-10 position-relative">
-  <label class="form-label">Tên khách hàng</label>
-  <input class="form-control" id="cust_name"
-         value="${c?.name||''}"
-         autocomplete="off"
-         oninput="suggestExistingCustomer(this.value)"
-  >
-  <div id="cust_name_sugs" class="suggestions d-none"></div>
-</div>
-            <div class="col-md-4"><label class="form-label">Người liên hệ</label><input class="form-control" id="cust_contact" value="${c?.contact_person||''}"></div>
-            <div class="col-md-4"><label class="form-label">Phone</label><input class="form-control" id="cust_phone" value="${c?.phone||''}"></div>
-            <div class="col-md-4"><label class="form-label">Email</label><input class="form-control" id="cust_email" value="${c?.email||''}"></div>
-            <div class="col-md-8"><label class="form-label">Địa chỉ</label><input class="form-control" id="cust_address" value="${c?.address||''}"></div>
-            <div class="col-md-4"><label class="form-label">Mã số thuế</label><input class="form-control" id="cust_tax" value="${c?.tax_code||''}"></div>
-          </div>
-          <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-primary" onclick="${isEdit?`updateCustomer('${id}')`:'addCustomer()'}"><i class="bi bi-check2-circle me-1"></i>Lưu</button>
-            <button class="btn btn-outline-secondary" onclick="document.getElementById('customerFormWrap').classList.add('d-none')">Hủy</button>
-          </div>
-        </div></div>`; }
-
-    async function addCustomer(){ const payload={ id:document.getElementById('cust_id').value, name:document.getElementById('cust_name').value.trim(), contact_person:document.getElementById('cust_contact').value||null, phone:document.getElementById('cust_phone').value||null, email:document.getElementById('cust_email').value||null, address:document.getElementById('cust_address').value||null, tax_code:document.getElementById('cust_tax').value||null, created_at:new Date().toISOString() }; if(!payload.name) return alert('Tên khách hàng không được trống'); const {error}=await sb.from('customers').insert([payload]); if(error) return alert(error.message); // remember for this user
-      pushMyCustomerId(payload.id);
-      await loadAll(); renderCustomers(); renderDashboard(); document.getElementById('customerFormWrap').classList.add('d-none'); }
-
-    async function updateCustomer(id){ const payload={ name:document.getElementById('cust_name').value.trim(), contact_person:document.getElementById('cust_contact').value||null, phone:document.getElementById('cust_phone').value||null, email:document.getElementById('cust_email').value||null, address:document.getElementById('cust_address').value||null, tax_code:document.getElementById('cust_tax').value||null }; if(!payload.name) return alert('Tên khách hàng không được trống'); const {error}=await sb.from('customers').update(payload).eq('id',id); if(error) return alert(error.message); await loadAll(); renderCustomers(); renderDashboard(); document.getElementById('customerFormWrap').classList.add('d-none'); }
-
-    async function deleteCustomer(id){ if(!confirm('Xóa khách hàng?')) return; const {error}=await sb.from('customers').delete().eq('id',id); if(error) return alert(error.message); await loadAll(); renderCustomers(); renderDashboard(); }
-
-    /* SERVICES DISABLED: no renderer */
-
-    /* PROJECTS */
-    function renderProjects(){ const tbody=document.getElementById('projectTbody'); tbody.innerHTML = projects.map(p=>{ const c=customers.find(x=>x.id===p.customer_id); return `
-          <tr>
-            <td>${p.project_id}</td>
-            <td class="text-start">${p.project_name||''}</td>
-            <td class="text-start">${c?c.name:p.customer_id}</td>
-            <td>${p.start_date||''}</td>
-            <td>${p.end_date||''}</td>
-            <td>${p.status||''}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openProjectForm('${p.project_id}')"><i class="bi bi-pencil-square"></i></button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteProject('${p.project_id}')"><i class="bi bi-trash"></i></button>
-            </td>
-          </tr>`; }).join(''); }
-
-    function openProjectForm(id=''){ const wrap=document.getElementById('projectFormWrap'); const isEdit=!!id; const p=isEdit?projects.find(x=>x.project_id===id):{}; const cust=customers.find(c=>c.id===p?.customer_id); wrap.classList.remove('d-none'); window.scrollTo({ top: 0, behavior: 'smooth' });wrap.innerHTML=`
-        <div class="card card-shadow mb-4"><div class="card-body">
-          <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} dự án</h5>
-          <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">ID</label><input class="form-control" disabled id="pr_id" value="${isEdit?p.project_id:generateProjectId()}"></div>
-            <div class="col-md-9"><label class="form-label">Tên dự án</label><input class="form-control" id="pr_name" value="${p?.project_name||''}"></div>
-            <div class="col-md-6 position-relative"><label class="form-label">Khách hàng</label><input class="form-control" id="pr_client" autocomplete="off" value="${cust?.name||''}" oninput="suggestCustomer(this.value,'pr_client')"><div id="pr_client_sugs" class="suggestions d-none"></div><input type="hidden" id="pr_client_id" value="${p?.customer_id||''}"></div>
-            <div class="col-md-3"><label class="form-label">Start</label><input type="date" class="form-control" id="pr_start" value="${p?.start_date||''}"></div>
-            <div class="col-md-3"><label class="form-label">End</label><input type="date" class="form-control" id="pr_end" value="${p?.end_date||''}"></div>
-            <div class="col-md-12"><label class="form-label">Status</label><select class="form-select" id="pr_status"><option${p?.status==='Chuẩn bị'?' selected':''}>Chuẩn bị</option><option${p?.status==='Đang triển khai'?' selected':''}>Đang triển khai</option><option${p?.status==='Hoàn thành'?' selected':''}>Hoàn thành</option></select></div>
-            <div class="col-12"><label class="form-label">Mô tả</label><textarea class="form-control" rows="2" id="pr_desc">${p?.description||''}</textarea></div>
-          </div>
-          <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateProject('${id}')`:'addProject()'}"><i class="bi bi-check2-circle me-1"></i>Lưu</button><button class="btn btn-outline-secondary" onclick="document.getElementById('projectFormWrap').classList.add('d-none')">Hủy</button></div>
-        </div></div>`; }
-
-    async function addProject(){ const payload={ project_id:document.getElementById('pr_id').value, project_name:document.getElementById('pr_name').value.trim(), customer_id:document.getElementById('pr_client_id').value, description:document.getElementById('pr_desc').value||null, start_date:document.getElementById('pr_start').value||null, end_date:document.getElementById('pr_end').value||null, status:document.getElementById('pr_status').value, created_at:new Date().toISOString() }; if(!payload.project_name) return alert('Tên dự án không được trống'); if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('projects').insert([payload]); if(error) return alert(error.message); await loadAll(); renderProjects(); renderDashboard(); document.getElementById('projectFormWrap').classList.add('d-none'); }
-
-    async function updateProject(id){ const payload={ project_name:document.getElementById('pr_name').value.trim(), customer_id:document.getElementById('pr_client_id').value, description:document.getElementById('pr_desc').value||null, start_date:document.getElementById('pr_start').value||null, end_date:document.getElementById('pr_end').value||null, status:document.getElementById('pr_status').value }; if(!payload.project_name) return alert('Tên dự án không được trống'); if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('projects').update(payload).eq('project_id',id); if(error) return alert(error.message); await loadAll(); renderProjects(); renderDashboard(); document.getElementById('projectFormWrap').classList.add('d-none'); }
-
-    async function deleteProject(id){ if(!confirm('Xóa dự án?')) return; const {error}=await sb.from('projects').delete().eq('project_id',id); if(error) return alert(error.message); await loadAll(); renderProjects(); renderDashboard(); }
-
-    /* OPPORTUNITIES */
-    function renderOpportunities(){ const tbody=document.getElementById('oppTbody'); tbody.innerHTML = opportunities.map(o=>{ const c=customers.find(x=>x.id===o.customer_id); return `
-          <tr>
-            <td>${o.opportunity_id}</td>
-            <td class="text-start">${o.name||''}</td>
-            <td class="text-start">${c?c.name:o.customer_id}</td>
-            <td>${money(o.expected_value)}</td>
-            <td>${o.stage||''}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openOppForm('${o.opportunity_id}')"><i class="bi bi-pencil-square"></i></button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteOpportunity('${o.opportunity_id}')"><i class="bi bi-trash"></i></button>
-            </td>
-          </tr>`; }).join(''); }
-
-    function openOppForm(id=''){ const wrap=document.getElementById('oppFormWrap'); const isEdit=!!id; const o=isEdit?opportunities.find(x=>x.opportunity_id===id):{}; const cust=customers.find(c=>c.id===o?.customer_id); wrap.classList.remove('d-none'); window.scrollTo({ top: 0, behavior: 'smooth' });wrap.innerHTML=`
-        <div class="card card-shadow mb-4"><div class="card-body">
-          <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} cơ hội</h5>
-          <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">ID</label><input class="form-control" disabled id="op_id" value="${isEdit?o.opportunity_id:generateOpportunityId()}"></div>
-            <div class="col-md-9"><label class="form-label">Tên cơ hội</label><input class="form-control" id="op_name" value="${o?.name||''}"></div>
-            <div class="col-md-6 position-relative"><label class="form-label">Khách hàng</label><input class="form-control" id="op_client" autocomplete="off" value="${cust?.name||''}" oninput="suggestCustomer(this.value,'op_client')"><div id="op_client_sugs" class="suggestions d-none"></div><input type="hidden" id="op_client_id" value="${o?.customer_id||''}"></div>
-            <div class="col-md-6"><label class="form-label">Giá trị kỳ vọng</label><input type="number" class="form-control" id="op_val" value="${o?.expected_value||0}"></div>
-            <div class="col-md-12"><label class="form-label">Stage</label><select class="form-select" id="op_stage"><option${o?.stage==='mới'?' selected':''}>mới</option><option${o?.stage==='đánh giá'?' selected':''}>đánh giá</option><option${o?.stage==='đàm phán'?' selected':''}>đàm phán</option><option${o?.stage==='đã thắng'?' selected':''}>đã thắng</option><option${o?.stage==='đã mất'?' selected':''}>đã mất</option></select></div>
-          </div>
-          <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateOpportunity('${id}')`:'addOpportunity()'}"><i class="bi bi-check2-circle me-1"></i>Lưu</button><button class="btn btn-outline-secondary" onclick="document.getElementById('oppFormWrap').classList.add('d-none')">Hủy</button></div>
-        </div></div>`; }
-
-    async function addOpportunity(){ const payload={ opportunity_id:document.getElementById('op_id').value, name:document.getElementById('op_name').value.trim(), customer_id:document.getElementById('op_client_id').value, expected_value:parseInt(document.getElementById('op_val').value||'0',10), stage:document.getElementById('op_stage').value, created_at:new Date().toISOString() }; if(!payload.name) return alert('Tên cơ hội không được trống'); if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('opportunities').insert([payload]); if(error) return alert(error.message); await loadAll(); renderOpportunities(); renderDashboard(); document.getElementById('oppFormWrap').classList.add('d-none'); }
-
-    async function updateOpportunity(id){ const payload={ name:document.getElementById('op_name').value.trim(), customer_id:document.getElementById('op_client_id').value, expected_value:parseInt(document.getElementById('op_val').value||'0',10), stage:document.getElementById('op_stage').value }; if(!payload.name) return alert('Tên cơ hội không được trống'); if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('opportunities').update(payload).eq('opportunity_id',id); if(error) return alert(error.message); await loadAll(); renderOpportunities(); renderDashboard(); document.getElementById('oppFormWrap').classList.add('d-none'); }
-
-    async function deleteOpportunity(id){ if(!confirm('Xóa cơ hội?')) return; const {error}=await sb.from('opportunities').delete().eq('opportunity_id',id); if(error) return alert(error.message); await loadAll(); renderOpportunities(); renderDashboard(); }
-
-    /* QUOTES (SIMPLIFIED) */
-    function renderQuotes(){ const tbody=document.getElementById('quoteTbody'); tbody.innerHTML = quotes.map(q=>{ const c=customers.find(x=>x.id===q.customer_id); const pr=projects.find(p=>p.project_id===q.project_id); return `
-          <tr>
-            <td>${q.quotes_id}</td>
-            <td class="text-start">${c?c.name:q.customer_id}</td>
-            <td class="text-start">${pr?pr.project_name:(q.project_id||'')}</td>
-            <td class="text-start">${q.description||''}</td>
-            <td>${money(q.amount)}</td>
-            <td>${q.status||''}</td>
-            <td>${q.send_count||0}</td>
-            <td>${q.pdf_url?`<a href="${q.pdf_url}" target="_blank">PDF</a>`:''}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openQuoteForm('${q.quotes_id}')"><i class="bi bi-pencil-square"></i></button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteQuote('${q.quotes_id}')"><i class="bi bi-trash"></i></button>
-            </td>
-          </tr>`; }).join(''); }
-
-    function openQuoteForm(id=''){ const wrap=document.getElementById('quoteFormWrap'); const isEdit=!!id; const q=isEdit?quotes.find(x=>x.quotes_id===id):{}; const cust=customers.find(c=>c.id===q?.customer_id); const pr=projects.find(p=>p.project_id===q?.project_id); wrap.classList.remove('d-none'); window.scrollTo({ top: 0, behavior: 'smooth' });wrap.innerHTML=`
-        <div class="card card-shadow mb-4"><div class="card-body">
-          <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} báo giá</h5>
-          <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">ID</label><input class="form-control" disabled id="q_id" value="${isEdit?q.quotes_id:generateQuoteId()}"></div>
-            <div class="col-md-9 position-relative"><label class="form-label">Khách hàng</label><input class="form-control" id="q_client" autocomplete="off" value="${cust?.name||''}" oninput="suggestCustomer(this.value,'q_client')"><div id="q_client_sugs" class="suggestions d-none"></div><input type="hidden" id="q_client_id" value="${q?.customer_id||''}"></div>
-            <div class="col-md-6 position-relative"><label class="form-label">Dự án</label><input class="form-control" id="q_project" oninput="suggestProject(this.value,'q_project')" …>
-<div id="q_project_sugs" class="suggestions d-none"></div><input type="hidden" id="q_project_id" value="${q?.project_id||''}"></div>
-            <div class="col-md-6"><label class="form-label">Số tiền</label><input type="number" class="form-control" id="q_amount" value="${q?.amount||0}"></div>
-            <div class="col-12"><label class="form-label">Nội dung</label><textarea class="form-control" rows="2" id="q_desc">${q?.description||''}</textarea></div>
-            <div class="col-md-6"><label class="form-label">Status</label><select class="form-select" id="q_status"><option${q?.status==='nháp'?' selected':''}>nháp</option><option${q?.status==='đã gửi'?' selected':''}>đã gửi</option><option${q?.status==='chấp nhận'?' selected':''}>chấp nhận</option><option${q?.status==='từ chối'?' selected':''}>từ chối</option></select></div>
-            <div class="col-md-3"><label class="form-label">Lần gửi</label><input type="number" class="form-control" id="q_send" value="${q?.send_count||0}"></div>
-            <div class="col-md-3"><label class="form-label">PDF URL</label><input class="form-control" id="q_pdf" placeholder="https://...pdf" value="${q?.pdf_url||''}"></div>
-          </div>
-          <div class="mt-4 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateQuote('${id}')`:'addQuote()'}"><i class="bi bi-check2-circle me-1"></i>Lưu báo giá</button><button class="btn btn-outline-secondary" onclick="document.getElementById('quoteFormWrap').classList.add('d-none')">Hủy</button></div>
-        </div></div>`; }
-
-    async function addQuote(){ const qid=document.getElementById('q_id').value; const payload={ quotes_id:qid, customer_id:document.getElementById('q_client_id').value, project_id:document.getElementById('q_project_id').value || null, description:document.getElementById('q_desc').value || null, amount:parseInt(document.getElementById('q_amount').value||'0',10), status:document.getElementById('q_status').value, send_count: parseInt(document.getElementById('q_send').value||'0',10), pdf_url: document.getElementById('q_pdf').value || null, created_at:new Date().toISOString() }; if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('quotes').insert([payload]); if(error) return alert(error.message); await loadAll(); renderQuotes(); renderDashboard(); document.getElementById('quoteFormWrap').classList.add('d-none'); }
-
-    async function updateQuote(id){ const payload={ customer_id:document.getElementById('q_client_id').value, project_id:document.getElementById('q_project_id').value || null, description:document.getElementById('q_desc').value || null, amount:parseInt(document.getElementById('q_amount').value||'0',10), status:document.getElementById('q_status').value, send_count: parseInt(document.getElementById('q_send').value||'0',10), pdf_url: document.getElementById('q_pdf').value || null }; if(!payload.customer_id) return alert('Chưa chọn khách hàng hợp lệ'); const {error}=await sb.from('quotes').update(payload).eq('quotes_id',id); if(error) return alert(error.message); await loadAll(); renderQuotes(); renderDashboard(); document.getElementById('quoteFormWrap').classList.add('d-none'); }
-
-    async function deleteQuote(id){ if(!confirm('Xóa báo giá?')) return; const {error}=await sb.from('quotes').delete().eq('quotes_id',id); if(error) return alert(error.message); await loadAll(); renderQuotes(); renderDashboard(); }
-
-    /* CONTRACTS */
-    function renderContracts(){ const tbody=document.getElementById('contractTbody'); tbody.innerHTML = contracts.map(ct=>{ const pr=projects.find(p=>p.project_id===ct.project_id); const c=customers.find(x=>x.id===ct.customer_id); return `
-          <tr>
-            <td>${ct.contract_id}</td>
-            <td class="text-start">${pr?pr.project_name:ct.project_id}</td>
-            <td class="text-start">${c?c.name:ct.customer_id}</td>
-            <td>${money(ct.value)}</td>
-            <td>${ct.status||''}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-secondary me-1" onclick="openContractForm('${ct.contract_id}')"><i class="bi bi-pencil-square"></i></button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteContract('${ct.contract_id}')"><i class="bi bi-trash"></i></button>
-            </td>
-          </tr>`; }).join(''); }
-
-    function openContractForm(id=''){ const wrap=document.getElementById('contractFormWrap'); const isEdit=!!id; const ct=isEdit?contracts.find(x=>x.contract_id===id):{}; const pr=projects.find(p=>p.project_id===ct?.project_id); wrap.classList.remove('d-none');window.scrollTo({ top: 0, behavior: 'smooth' }); wrap.innerHTML=`
-        <div class="card card-shadow mb-4"><div class="card-body">
-          <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} hợp đồng</h5>
-          <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">ID</label><input class="form-control" disabled id="ct_id" value="${isEdit?ct.contract_id:generateContractId()}"></div>
-            <div class="col-md-9 position-relative"><label class="form-label">Dự án</label><input class="form-control" id="ct_proj" autocomplete="off" value="${pr?.project_name||''}" oninput="suggestProject(this.value,'ct_proj')"><div id="ct_proj_sugs" class="suggestions d-none"></div><input type="hidden" id="ct_proj_id" value="${ct?.project_id||''}"></div>
-            <div class="col-md-6 position-relative"><label class="form-label">Báo giá (tùy chọn)</label><input class="form-control" id="ct_quote" autocomplete="off" value="${ct?.quotes_id||''}" oninput="suggestQuote(this.value,'ct_quote')"><div id="ct_quote_sugs" class="suggestions d-none"></div><input type="hidden" id="ct_quote_id" value="${ct?.quotes_id||''}"></div>
-            <div class="col-md-6"><label class="form-label">Giá trị</label><input type="number" class="form-control" id="ct_val" value="${ct?.value||0}"></div>
-            <div class="col-md-6"><label class="form-label">Ngày HĐ</label><input type="date" class="form-control" id="ct_date" value="${ct?.contract_date||''}"></div>
-            <div class="col-md-6"><label class="form-label">Trạng thái</label><select class="form-select" id="ct_status"><option${ct?.status==='hiệu lực'?' selected':''}>hiệu lực</option><option${ct?.status==='hoàn thành'?' selected':''}>hoàn thành</option><option${ct?.status==='hủy'?' selected':''}>hủy</option></select></div>
-          </div>
-          <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateContract('${id}')`:'addContract()'}"><i class="bi bi-check2-circle me-1"></i>Lưu</button><button class="btn btn-outline-secondary" onclick="document.getElementById('contractFormWrap').classList.add('d-none')">Hủy</button></div>
-        </div></div>`; }
-
-    async function addContract(){ const projId=document.getElementById('ct_proj_id').value; const proj=projects.find(p=>p.project_id===projId)||{}; const payload={ contract_id:document.getElementById('ct_id').value, project_id:projId, customer_id:proj.customer_id, quotes_id:document.getElementById('ct_quote_id').value || null, value:parseInt(document.getElementById('ct_val').value||'0',10), contract_date:document.getElementById('ct_date').value || null, status:document.getElementById('ct_status').value, created_at:new Date().toISOString() }; if(!payload.project_id) return alert('Chưa chọn dự án hợp lệ'); const {error}=await sb.from('contracts').insert([payload]); if(error) return alert(error.message); await loadAll(); renderContracts(); renderDashboard(); document.getElementById('contractFormWrap').classList.add('d-none'); }
-
-    async function updateContract(id){ const projId=document.getElementById('ct_proj_id').value; const proj=projects.find(p=>p.project_id===projId)||{}; const payload={ project_id:projId, customer_id:proj.customer_id, quotes_id:document.getElementById('ct_quote_id').value || null, value:parseInt(document.getElementById('ct_val').value||'0',10), contract_date:document.getElementById('ct_date').value || null, status:document.getElementById('ct_status').value }; if(!payload.project_id) return alert('Chưa chọn dự án hợp lệ'); const {error}=await sb.from('contracts').update(payload).eq('contract_id',id); if(error) return alert(error.message); await loadAll(); renderContracts(); renderDashboard(); document.getElementById('contractFormWrap').classList.add('d-none'); }
-
-    async function deleteContract(id){ if(!confirm('Xóa hợp đồng?')) return; const {error}=await sb.from('contracts').delete().eq('contract_id',id); if(error) return alert(error.message); await loadAll(); renderContracts(); renderDashboard(); }
-
-    /* USERS (whitelist) */
-    function renderUsers(){ const me = users.find(u=>u.email===currentUser.email); const canSee = me && ['admin','BOM'].includes(me.role); document.getElementById('navUsers').style.display = canSee ? '' : 'none'; const tbody=document.getElementById('userTbody'); tbody.innerHTML = users.map(u=>`
-        <tr>
-          <td class="text-start">${u.email}</td>
-          <td>${u.role||''}</td>
-          <td>${u.active?'true':'false'}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-secondary me-1" onclick="openUserForm('${u.id}')"><i class="bi bi-pencil-square"></i></button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${u.id}')"><i class="bi bi-trash"></i></button>
-          </td>
-        </tr>`).join(''); }
-
-    function openUserForm(id=''){ const wrap=document.getElementById('userFormWrap'); const isEdit=!!id; const u=isEdit?users.find(x=>x.id===id):{}; wrap.classList.remove('d-none'); wrap.innerHTML=`
-        <div class="card card-shadow mb-4"><div class="card-body">
-          <h5 class="card-title mb-3">${isEdit?'Sửa':'Thêm'} user</h5>
-          <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" id="us_email" value="${u?.email||''}" ${isEdit?'disabled':''}></div>
-            <div class="col-md-3"><label class="form-label">Role</label><select class="form-select" id="us_role"><option value="user"${u?.role==='user'?' selected':''}>user</option><option value="admin"${u?.role==='admin'?' selected':''}>admin</option><option value="BOM"${u?.role==='BOM'?' selected':''}>BOM</option></select></div>
-            <div class="col-md-3"><label class="form-label">Active</label><select class="form-select" id="us_active"><option value="true"${u?.active?' selected':''}>true</option><option value="false"${!u?.active?' selected':''}>false</option></select></div>
-          </div>
-          <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" onclick="${isEdit?`updateUser('${id}')`:'addUser()'}"><i class="bi bi-check2-circle me-1"></i>Lưu</button><button class="btn btn-outline-secondary" onclick="document.getElementById('userFormWrap').classList.add('d-none')">Hủy</button></div>
-        </div></div>`; }
-
-    async function addUser(){ const payload={ email:document.getElementById('us_email').value.trim(), role:document.getElementById('us_role').value, active:document.getElementById('us_active').value==='true', created_at:new Date().toISOString() }; if(!payload.email) return alert('Email không được trống'); const {error}=await sb.from('user_profiles').insert([payload]); if(error) return alert(error.message); await loadAll(); renderUsers(); document.getElementById('userFormWrap').classList.add('d-none'); }
-    async function updateUser(id){ const payload={ role:document.getElementById('us_role').value, active:document.getElementById('us_active').value==='true' }; const {error}=await sb.from('user_profiles').update(payload).eq('id',id); if(error) return alert(error.message); await loadAll(); renderUsers(); document.getElementById('userFormWrap').classList.add('d-none'); }
-    async function deleteUser(id){ if(!confirm('Xóa user?')) return; const {error}=await sb.from('user_profiles').delete().eq('id',id); if(error) return alert(error.message); await loadAll(); renderUsers(); }
-
-    /* 12) AUTOCOMPLETE HELPERS */
-    function suggestExistingCustomer(q) {
-  const box = document.getElementById('cust_name_sugs');
-  box.innerHTML = '';
-  if (!q) {
-    box.classList.add('d-none');
-    return;
-  }
-  // Tìm trong mảng customers (đã load từ Supabase)
-  const list = customers.filter(c =>
-    (c.name||'').toLowerCase().includes(q.toLowerCase()) ||
-    (c.id  ||'').toLowerCase().includes(q.toLowerCase())
-  );
-  if (list.length) {
-    list.forEach(c => {
-      const d = document.createElement('div');
-      d.className = 'suggestion-item';
-      d.textContent = `${c.id} – ${c.name}`;
-      d.onclick = () => {
-        // điền form với dữ liệu đã có
-        document.getElementById('cust_id').value          = c.id;
-        document.getElementById('cust_name').value        = c.name;
-        document.getElementById('cust_contact').value     = c.contact_person||'';
-        document.getElementById('cust_phone').value       = c.phone||'';
-        document.getElementById('cust_email').value       = c.email||'';
-        document.getElementById('cust_address').value     = c.address||'';
-        document.getElementById('cust_tax').value         = c.tax_code||'';
-        box.classList.add('d-none');
-      };
-      box.appendChild(d);
-    });
-  } else {
-    // Nếu không tìm thấy, cho nút Tạo mới
-    const d = document.createElement('div');
-    d.className = 'suggestion-item text-primary';
-    d.textContent = '+ Tạo khách hàng mới';
-    d.onclick = () => {
-      // quay lại form mới: reset hết ngoại trừ ID
-      const newId = generateCustomerId();
-      document.getElementById('cust_id').value      = newId;
-      document.getElementById('cust_name').value    = q;
-      document.getElementById('cust_contact').value = '';
-      document.getElementById('cust_phone').value   = '';
-      document.getElementById('cust_email').value   = '';
-      document.getElementById('cust_address').value = '';
-      document.getElementById('cust_tax').value     = '';
-      box.classList.add('d-none');
+    /* ===== CRUD OPERATIONS ===== */
+    const crud = {
+      async create(table, data) {
+        try {
+          const { error } = await sb.from(table).insert([data]);
+          if (error) throw error;
+          await loadData();
+          utils.showToast('Thêm mới thành công');
+          return true;
+        } catch (error) {
+          utils.showToast(error.message, 'error');
+          return false;
+        }
+      },
+      
+      async update(table, data, matchColumn, matchValue) {
+        try {
+          const { error } = await sb.from(table).update(data).eq(matchColumn, matchValue);
+          if (error) throw error;
+          await loadData();
+          utils.showToast('Cập nhật thành công');
+          return true;
+        } catch (error) {
+          utils.showToast(error.message, 'error');
+          return false;
+        }
+      },
+      
+      async delete(table, matchColumn, matchValue) {
+        try {
+          const { error } = await sb.from(table).delete().eq(matchColumn, matchValue);
+          if (error) throw error;
+          await loadData();
+          utils.showToast('Xóa thành công');
+          return true;
+        } catch (error) {
+          utils.showToast(error.message, 'error');
+          return false;
+        }
+      }
     };
-    box.appendChild(d);
-  }
-  box.classList.remove('d-none');
-}
-    function suggestCustomer(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=customers.filter(c=>(c.name||'').toLowerCase().includes(q.toLowerCase())||(c.id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(c=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=`${c.id} – ${c.name}`; d.onclick=()=>{ document.getElementById(fld).value=c.name; const hid=document.getElementById(`${fld}_id`); if(hid) hid.value=c.id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
-    function suggestOpportunity(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=opportunities.filter(o=>(o.opportunity_id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(o=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=o.opportunity_id; d.onclick=()=>{ document.getElementById(fld).value=o.opportunity_id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
-    function suggestProject(q, fld) {
-  const box = document.getElementById(`${fld}_sugs`);
-  box.innerHTML = '';
-  // lấy customer đã chọn
-  const custId = document.getElementById('q_client_id').value;
-  if (!custId) {
-    box.innerHTML = `<div class="suggestion-item text-danger">Vui lòng chọn Khách hàng trước</div>`;
-    return box.classList.remove('d-none');
-  }
-  // lọc dự án của khách đó
-  const list = projects.filter(p =>
-    p.customer_id === custId &&
-    (
-      (p.project_name||'').toLowerCase().includes(q.toLowerCase()) ||
-      (p.project_id||'').toLowerCase().includes(q.toLowerCase())
-    )
-  );
-  if (list.length) {
-    list.forEach(p => {
-      const d = document.createElement('div');
-      d.className = 'suggestion-item';
-      d.textContent = `${p.project_id} – ${p.project_name}`;
-      d.onclick = () => {
-        document.getElementById(fld).value = p.project_name;
-        document.getElementById(`${fld}_id`).value = p.project_id;
-        box.classList.add('d-none');
-      };
-      box.appendChild(d);
-    });
-  } else {
-    // nếu không có, thêm dòng “Thêm dự án mới”
-    const d = document.createElement('div');
-    d.className = 'suggestion-item text-primary';
-    d.textContent = '+ Thêm dự án mới';
-    d.onclick = () => {
-      box.classList.add('d-none');
-      // chuyển sang tab Projects và mở form thêm mới, gán custId
-      showSection('projects');
-      openProjectForm();
-      // sau khi openProjectForm, set luôn khách hàng cho form Projects
-      setTimeout(()=>{
-        document.getElementById('pr_client_id').value = custId;
-        document.getElementById('pr_client').value = document.getElementById('q_client').value;
-      },0);
+
+    /* ===== RENDER FUNCTIONS ===== */
+    const renderers = {
+      dashboard() {
+        ui.setKPIs();
+      },
+      
+      customers() {
+        const tbody = document.getElementById('customerTbody');
+        let list = state.customers;
+        
+        const isElevated = ['admin', 'BOM'].includes(state.currentUser.role);
+        if (!isElevated) {
+          const allowedIds = storage.getMyCustomerIds();
+          list = state.customers.filter(c => allowedIds.includes(c.id));
+        }
+        
+        tbody.innerHTML = list.map(c => `
+          <tr>
+            <td>${c.id}</td>
+            <td class="text-start fw-medium">${c.name || ''}</td>
+            <td class="d-none d-md-table-cell">${c.contact_person || ''}</td>
+            <td class="d-none d-lg-table-cell">${c.phone || ''}</td>
+            <td class="d-none d-lg-table-cell">${c.email || ''}</td>
+            <td class="d-none d-xl-table-cell">${c.tax_code || ''}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="forms.customer('${c.id}')">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn btn-outline-danger" onclick="handlers.deleteCustomer('${c.id}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      },
+      
+      projects() {
+        const tbody = document.getElementById('projectTbody');
+        tbody.innerHTML = state.projects.map(p => {
+          const customer = state.cache.customerMap.get(p.customer_id);
+          return `
+            <tr>
+              <td>${p.project_id}</td>
+              <td class="text-start fw-medium">${p.project_name || ''}</td>
+              <td class="d-none d-md-table-cell">${customer ? customer.name : p.customer_id}</td>
+              <td class="d-none d-lg-table-cell">${p.start_date || ''}</td>
+              <td class="d-none d-lg-table-cell">${p.end_date || ''}</td>
+              <td><span class="badge bg-secondary">${p.status || ''}</span></td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-secondary" onclick="forms.project('${p.project_id}')">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="handlers.deleteProject('${p.project_id}')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      },
+      
+      opportunities() {
+        const tbody = document.getElementById('oppTbody');
+        tbody.innerHTML = state.opportunities.map(o => {
+          const customer = state.cache.customerMap.get(o.customer_id);
+          return `
+            <tr>
+              <td>${o.opportunity_id}</td>
+              <td class="text-start fw-medium">${o.name || ''}</td>
+              <td class="d-none d-md-table-cell">${customer ? customer.name : o.customer_id}</td>
+              <td>${utils.money(o.expected_value)}</td>
+              <td><span class="badge bg-info">${o.stage || ''}</span></td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-secondary" onclick="forms.opportunity('${o.opportunity_id}')">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="handlers.deleteOpportunity('${o.opportunity_id}')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      },
+      
+      quotes() {
+        const tbody = document.getElementById('quoteTbody');
+        tbody.innerHTML = state.quotes.map(q => {
+          const customer = state.cache.customerMap.get(q.customer_id);
+          const project = state.cache.projectMap.get(q.project_id);
+          return `
+            <tr>
+              <td>${q.quotes_id}</td>
+              <td class="d-none d-md-table-cell">${customer ? customer.name : q.customer_id}</td>
+              <td class="d-none d-lg-table-cell">${project ? project.project_name : (q.project_id || '')}</td>
+              <td class="text-start">${q.description || ''}</td>
+              <td>${utils.money(q.amount)}</td>
+              <td class="d-none d-md-table-cell"><span class="badge bg-secondary">${q.status || ''}</span></td>
+              <td class="d-none d-lg-table-cell">${q.send_count || 0}</td>
+              <td class="d-none d-xl-table-cell">${q.pdf_url ? `<a href="${q.pdf_url}" target="_blank">PDF</a>` : ''}</td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-secondary" onclick="forms.quote('${q.quotes_id}')">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="handlers.deleteQuote('${q.quotes_id}')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      },
+      
+      contracts() {
+        const tbody = document.getElementById('contractTbody');
+        tbody.innerHTML = state.contracts.map(ct => {
+          const project = state.cache.projectMap.get(ct.project_id);
+          const customer = state.cache.customerMap.get(ct.customer_id);
+          return `
+            <tr>
+              <td>${ct.contract_id}</td>
+              <td class="text-start fw-medium">${project ? project.project_name : ct.project_id}</td>
+              <td class="d-none d-md-table-cell">${customer ? customer.name : ct.customer_id}</td>
+              <td>${utils.money(ct.value)}</td>
+              <td><span class="badge bg-success">${ct.status || ''}</span></td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-secondary" onclick="forms.contract('${ct.contract_id}')">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button class="btn btn-outline-danger" onclick="handlers.deleteContract('${ct.contract_id}')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      },
+      
+      users() {
+        const me = state.users.find(u => u.email === state.currentUser.email);
+        const canSee = me && ['admin', 'BOM'].includes(me.role);
+        document.getElementById('navUsers').style.display = canSee ? '' : 'none';
+        
+        const tbody = document.getElementById('userTbody');
+        tbody.innerHTML = state.users.map(u => `
+          <tr>
+            <td class="text-start">${u.email}</td>
+            <td><span class="badge bg-primary">${u.role || ''}</span></td>
+            <td>${u.active ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-danger"></i>'}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="forms.user('${u.id}')">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn btn-outline-danger" onclick="handlers.deleteUser('${u.id}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
     };
-    box.appendChild(d);
-  }
-  box.classList.remove('d-none');
-}
 
-    function suggestQuote(q,fld){ const box=document.getElementById(`${fld}_sugs`); box.innerHTML=''; if(!q){ box.classList.add('d-none'); return; } const list=quotes.filter(x=>(x.quotes_id||'').toLowerCase().includes(q.toLowerCase())); list.forEach(x=>{ const d=document.createElement('div'); d.className='suggestion-item'; d.textContent=x.quotes_id; d.onclick=()=>{ document.getElementById(fld).value=x.quotes_id; const hid=document.getElementById(`${fld}_id`); if(hid) hid.value=x.quotes_id; box.classList.add('d-none'); }; box.appendChild(d); }); box.classList.remove('d-none'); }
+    /* ===== FORM BUILDERS ===== */
+    const forms = {
+      customer(id = '') {
+        const wrap = document.getElementById('customerFormWrap');
+        const isEdit = !!id;
+        const c = isEdit ? state.customers.find(x => x.id === id) : {};
+        
+        wrap.classList.remove('d-none');
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} khách hàng</h5>
+              <form id="customerForm">
+                <div class="row g-3">
+                  <div class="col-md-2">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="cust_id" value="${isEdit ? c.id : generators.customerId()}">
+                  </div>
+                  <div class="col-md-10 position-relative">
+                    <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="cust_name" value="${c?.name || ''}" autocomplete="off" required>
+                    <div id="cust_name_sugs" class="suggestions d-none"></div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Người liên hệ</label>
+                    <input class="form-control" id="cust_contact" value="${c?.contact_person || ''}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Phone</label>
+                    <input class="form-control" id="cust_phone" value="${c?.phone || ''}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="cust_email" value="${c?.email || ''}">
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label">Địa chỉ</label>
+                    <input class="form-control" id="cust_address" value="${c?.address || ''}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Mã số thuế</label>
+                    <input class="form-control" id="cust_tax" value="${c?.tax_code || ''}">
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('customerFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        // Attach events
+        document.getElementById('customerForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveCustomer(id);
+        };
+        
+        const nameInput = document.getElementById('cust_name');
+        nameInput.oninput = utils.debounce(() => autocomplete.suggestExistingCustomer(nameInput.value), CONFIG.DEBOUNCE_DELAY);
+      },
+      
+      project(id = '') {
+        const wrap = document.getElementById('projectFormWrap');
+        const isEdit = !!id;
+        const p = isEdit ? state.projects.find(x => x.project_id === id) : {};
+        const customer = state.cache.customerMap.get(p?.customer_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} dự án</h5>
+              <form id="projectForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="pr_id" value="${isEdit ? p.project_id : generators.projectId()}">
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label">Tên dự án <span class="text-danger">*</span></label>
+                    <input class="form-control" id="pr_name" value="${p?.project_name || ''}" required>
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="pr_client" autocomplete="off" value="${customer?.name || ''}" required>
+                    <div id="pr_client_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="pr_client_id" value="${p?.customer_id || ''}">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Start</label>
+                    <input type="date" class="form-control" id="pr_start" value="${p?.start_date || ''}">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">End</label>
+                    <input type="date" class="form-control" id="pr_end" value="${p?.end_date || ''}">
+                  </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="pr_status">
+                      <option ${p?.status === 'Chuẩn bị' ? 'selected' : ''}>Chuẩn bị</option>
+                      <option ${p?.status === 'Đang triển khai' ? 'selected' : ''}>Đang triển khai</option>
+                      <option ${p?.status === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" rows="2" id="pr_desc">${p?.description || ''}</textarea>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('projectFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('projectForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveProject(id);
+        };
+        
+        const clientInput = document.getElementById('pr_client');
+        clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'pr_client'), CONFIG.DEBOUNCE_DELAY);
+      },
+      
+      opportunity(id = '') {
+        const wrap = document.getElementById('oppFormWrap');
+        const isEdit = !!id;
+        const o = isEdit ? state.opportunities.find(x => x.opportunity_id === id) : {};
+        const customer = state.cache.customerMap.get(o?.customer_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} cơ hội</h5>
+              <form id="oppForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="op_id" value="${isEdit ? o.opportunity_id : generators.opportunityId()}">
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label">Tên cơ hội <span class="text-danger">*</span></label>
+                    <input class="form-control" id="op_name" value="${o?.name || ''}" required>
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="op_client" autocomplete="off" value="${customer?.name || ''}" required>
+                    <div id="op_client_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="op_client_id" value="${o?.customer_id || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Giá trị kỳ vọng</label>
+                    <input type="number" class="form-control" id="op_val" value="${o?.expected_value || 0}">
+                  </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Stage</label>
+                    <select class="form-select" id="op_stage">
+                      <option ${o?.stage === 'mới' ? 'selected' : ''}>mới</option>
+                      <option ${o?.stage === 'đánh giá' ? 'selected' : ''}>đánh giá</option>
+                      <option ${o?.stage === 'đàm phán' ? 'selected' : ''}>đàm phán</option>
+                      <option ${o?.stage === 'đã thắng' ? 'selected' : ''}>đã thắng</option>
+                      <option ${o?.stage === 'đã mất' ? 'selected' : ''}>đã mất</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('oppFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('oppForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveOpportunity(id);
+        };
+        
+        const clientInput = document.getElementById('op_client');
+        clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'op_client'), CONFIG.DEBOUNCE_DELAY);
+      },
+      
+      quote(id = '') {
+        const wrap = document.getElementById('quoteFormWrap');
+        const isEdit = !!id;
+        const q = isEdit ? state.quotes.find(x => x.quotes_id === id) : {};
+        const customer = state.cache.customerMap.get(q?.customer_id);
+        const project = state.cache.projectMap.get(q?.project_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} báo giá</h5>
+              <form id="quoteForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="q_id" value="${isEdit ? q.quotes_id : generators.quoteId()}">
+                  </div>
+                  <div class="col-md-9 position-relative">
+                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="q_client" autocomplete="off" value="${customer?.name || ''}" required>
+                    <div id="q_client_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="q_client_id" value="${q?.customer_id || ''}">
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Dự án</label>
+                    <input class="form-control" id="q_project" autocomplete="off" value="${project?.project_name || ''}">
+                    <div id="q_project_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="q_project_id" value="${q?.project_id || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Số tiền</label>
+                    <input type="number" class="form-control" id="q_amount" value="${q?.amount || 0}">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Nội dung</label>
+                    <textarea class="form-control" rows="2" id="q_desc">${q?.description || ''}</textarea>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="q_status">
+                      <option ${q?.status === 'nháp' ? 'selected' : ''}>nháp</option>
+                      <option ${q?.status === 'đã gửi' ? 'selected' : ''}>đã gửi</option>
+                      <option ${q?.status === 'chấp nhận' ? 'selected' : ''}>chấp nhận</option>
+                      <option ${q?.status === 'từ chối' ? 'selected' : ''}>từ chối</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Lần gửi</label>
+                    <input type="number" class="form-control" id="q_send" value="${q?.send_count || 0}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">PDF URL</label>
+                    <input class="form-control" id="q_pdf" placeholder="https://...pdf" value="${q?.pdf_url || ''}">
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu báo giá
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('quoteFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('quoteForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveQuote(id);
+        };
+        
+        const clientInput = document.getElementById('q_client');
+        clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'q_client'), CONFIG.DEBOUNCE_DELAY);
+        
+        const projectInput = document.getElementById('q_project');
+        projectInput.oninput = utils.debounce(() => autocomplete.suggestProject(projectInput.value, 'q_project'), CONFIG.DEBOUNCE_DELAY);
+      },
+      
+      contract(id = '') {
+        const wrap = document.getElementById('contractFormWrap');
+        const isEdit = !!id;
+        const ct = isEdit ? state.contracts.find(x => x.contract_id === id) : {};
+        const project = state.cache.projectMap.get(ct?.project_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} hợp đồng</h5>
+              <form id="contractForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="ct_id" value="${isEdit ? ct.contract_id : generators.contractId()}">
+                  </div>
+                  <div class="col-md-9 position-relative">
+                    <label class="form-label">Dự án <span class="text-danger">*</span></label>
+                    <input class="form-control" id="ct_proj" autocomplete="off" value="${project?.project_name || ''}" required>
+                    <div id="ct_proj_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="ct_proj_id" value="${ct?.project_id || ''}">
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Báo giá (tùy chọn)</label>
+                    <input class="form-control" id="ct_quote" autocomplete="off" value="${ct?.quotes_id || ''}">
+                    <div id="ct_quote_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="ct_quote_id" value="${ct?.quotes_id || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Giá trị</label>
+                    <input type="number" class="form-control" id="ct_val" value="${ct?.value || 0}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Ngày HĐ</label>
+                    <input type="date" class="form-control" id="ct_date" value="${ct?.contract_date || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" id="ct_status">
+                      <option ${ct?.status === 'hiệu lực' ? 'selected' : ''}>hiệu lực</option>
+                      <option ${ct?.status === 'hoàn thành' ? 'selected' : ''}>hoàn thành</option>
+                      <option ${ct?.status === 'hủy' ? 'selected' : ''}>hủy</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('contractFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('contractForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveContract(id);
+        };
+        
+        const projInput = document.getElementById('ct_proj');
+        projInput.oninput = utils.debounce(() => autocomplete.suggestProject(projInput.value, 'ct_proj'), CONFIG.DEBOUNCE_DELAY);
+        
+        const quoteInput = document.getElementById('ct_quote');
+        quoteInput.oninput = utils.debounce(() => autocomplete.suggestQuote(quoteInput.value, 'ct_quote'), CONFIG.DEBOUNCE_DELAY);
+      },
+      
+      user(id = '') {
+        const wrap = document.getElementById('userFormWrap');
+        const isEdit = !!id;
+        const u = isEdit ? state.users.find(x => x.id === id) : {};
+        
+        wrap.classList.remove('d-none');
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} user</h5>
+              <form id="userForm">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="us_email" value="${u?.email || ''}" ${isEdit ? 'disabled' : 'required'}>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" id="us_role">
+                      <option value="user" ${u?.role === 'user' ? 'selected' : ''}>user</option>
+                      <option value="admin" ${u?.role === 'admin' ? 'selected' : ''}>admin</option>
+                      <option value="BOM" ${u?.role === 'BOM' ? 'selected' : ''}>BOM</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Active</label>
+                    <select class="form-select" id="us_active">
+                      <option value="true" ${u?.active ? 'selected' : ''}>true</option>
+                      <option value="false" ${!u?.active ? 'selected' : ''}>false</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('userFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('userForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveUser(id);
+        };
+      }
+    };
 
-    // ===== AUTH HELPERS =====
-    function showAuthOverlay(msg=''){ const el=document.getElementById('authOverlay'); if(msg) document.getElementById('authError').textContent=msg; el.classList.remove('d-none'); }
-    function hideAuthOverlay(){ document.getElementById('authError').textContent=''; document.getElementById('authOverlay').classList.add('d-none'); }
+    /* ===== CRUD HANDLERS ===== */
+    const handlers = {
+      async saveCustomer(id) {
+        const payload = {
+          name: document.getElementById('cust_name').value.trim(),
+          contact_person: document.getElementById('cust_contact').value || null,
+          phone: document.getElementById('cust_phone').value || null,
+          email: document.getElementById('cust_email').value || null,
+          address: document.getElementById('cust_address').value || null,
+          tax_code: document.getElementById('cust_tax').value || null
+        };
+        
+        if (!payload.name) {
+          utils.showToast('Tên khách hàng không được trống', 'error');
+          return;
+        }
+        
+        const btn = document.querySelector('#customerForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('customers', payload, 'id', id);
+        } else {
+          payload.id = document.getElementById('cust_id').value;
+          payload.created_at = new Date().toISOString();
+          success = await crud.create('customers', payload);
+          if (success) storage.pushMyCustomerId(payload.id);
+        }
+        
+        stopLoading();
+        
+        if (success) {
+          renderers.customers();
+          renderers.dashboard();
+          document.getElementById('customerFormWrap').classList.add('d-none');
+        }
+      },
+      
+      async saveProject(id) {
+        const payload = {
+          project_name: document.getElementById('pr_name').value.trim(),
+          customer_id: document.getElementById('pr_client_id').value,
+          description: document.getElementById('pr_desc').value || null,
+          start_date: document.getElementById('pr_start').value || null,
+          end_date: document.getElementById('pr_end').value || null,
+          status: document.getElementById('pr_status').value
+        };
+        
+        if (!payload.project_name) {
+          utils.showToast('Tên dự án không được trống', 'error');
+          return;
+        }
+        
+        if (!payload.customer_id) {
+          utils.showToast('Chưa chọn khách hàng hợp lệ', 'error');
+          return;
+        }
+        
+        const btn = document.querySelector('#projectForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('projects', payload, 'project_id', id);
+        } else {
+          payload.project_id = document.getElementById('pr_id').value;
+          payload.created_at = new Date().toISOString();
+          success = await crud.create('projects', payload);
+        }
+        
+        stopLoading();
+        
+        if (success) {
+          renderers.projects();
+          renderers.dashboard();
+          document.getElementById('projectFormWrap').classList.add('d-none');
+        }
+      },
+      
+      async saveOpportunity(id) {
+        const payload = {
+          name: document.getElementById('op_name').value.trim(),
+          customer_id: document.getElementById('op_client_id').value,
+          expected_value: parseInt(document.getElementById('op_val').value || '0', 10),
+          stage: document.getElementById('op_stage').value
+        };
+        
+        if (!payload.name) {
+          utils.showToast('Tên cơ hội không được trống', 'error');
+          return;
+        }
+        
+        if (!payload.customer_id) {
+          utils.showToast('Chưa chọn khách hàng hợp lệ', 'error');
+          return;
+        }
+        
+        const btn = document.querySelector('#oppForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('opportunities', payload, 'opportunity_id', id);
+        } else {
+          payload.opportunity_id = document.getElementById('op_id').value;
+          payload.created_at = new Date().toISOString();
+          success = await crud.create('opportunities', payload);
+        }
+        
+        stopLoading();
+        
+        if (success) {
+          renderers.opportunities();
+          renderers.dashboard();
+          document.getElementById('oppFormWrap').classList.add('d-none');
+        }
+      },
+      
+      async saveQuote(id) {
+        const payload = {
+          customer_id: document.getElementById('q_client_id').value,
+          project_id: document.getElementById('q_project_id').value || null,
+          description: document.getElementById('q_desc').value || null,
+          amount: parseInt(document.getElementById('q_amount').value || '0', 10),
+          status: document.getElementById('q_status').value,
+          send_count: parseInt(document.getElementById('q_send').value || '0', 10),
+          pdf_url: document.getElementById('q_pdf').value || null
+        };
+        
+        if (!payload.customer_id) {
+          utils.showToast('Chưa chọn khách hàng hợp lệ', 'error');
+          return;
+        }
+        
+        const btn = document.querySelector('#quoteForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('quotes', payload, 'quotes_id', id);
+        } else {
+          payload.quotes_id = document.getElementById('q_id').value;
+          payload.created_at = new Date().toISOString();
+          success = await crud.create('quotes', payload);
+        }
+        
+        stopLoading();
+        
+        if (success) {
+          renderers.quotes();
+          document.getElementById('quoteFormWrap').classList.add('d-none');
+        }
+      },
+      
+      async saveContract(id) {
+        const projId = document.getElementById('ct_proj_id').value;
+        const project = state.cache.projectMap.get(projId);
+        
+        const payload = {
+          project_id: projId,
+          customer_id: project?.customer_id,
+          quotes_id: document.getElementById('ct_quote_id').value || null,
+          value: parseInt(document.getElementById('ct_val').value || '0', 10),
+          contract_date: document.getElementById('ct_date').value || null,
+          status: document.getElementById('ct_status').value
+        };
+        
+        if (!payload.project_id) {
+          utils.showToast('Chưa chọn dự án hợp lệ', 'error');
+          return;
+        }
+        
+        const btn = document.querySelector('#contractForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('contracts', payload, 'contract_id', id);
+        } else {
+          payload.contract_id = document.getElementById('ct_id').value;
+          payload.created_at = new Date().toISOString();
+          success = await crud.create('contracts', payload);
+        }
+        
+        stopLoading();
+        
+        if (success) {
+          renderers.contracts();
+          document.getElementById('contractFormWrap').classList.add('d-none');
+        }
+      },
+      
+      async saveUser(id) {
+        const payload = {
+          role: document.getElementById('us_role').value,
+          active: document.getElementById('us_active').value === 'true'
+        };
+        
+        if (!id) {
+          payload.email = document.getElementById('us_email').value.trim();
+          if (!payload.email) {
+            utils.showToast('Email không được trống', 'error');
+            return;
+          }
+          payload.created_at = new Date().toISOString();
+        }
+        
+        const btn = document.querySelector('#userForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('user_profiles', payload, 'id', id);
+        } else {
+          success = await crud.create('user_profiles', payload);
+        }
+        
+        stopLoading();
+        
+        if (success) {
+          renderers.users();
+          document.getElementById('userFormWrap').classList.add('d-none');
+        }
+      },
+      
+      async deleteCustomer(id) {
+        if (!confirm('Xóa khách hàng này?')) return;
+        if (await crud.delete('customers', 'id', id)) {
+          renderers.customers();
+          renderers.dashboard();
+        }
+      },
+      
+      async deleteProject(id) {
+        if (!confirm('Xóa dự án này?')) return;
+        if (await crud.delete('projects', 'project_id', id)) {
+          renderers.projects();
+          renderers.dashboard();
+        }
+      },
+      
+      async deleteOpportunity(id) {
+        if (!confirm('Xóa cơ hội này?')) return;
+        if (await crud.delete('opportunities', 'opportunity_id', id)) {
+          renderers.opportunities();
+          renderers.dashboard();
+        }
+      },
+      
+      async deleteQuote(id) {
+        if (!confirm('Xóa báo giá này?')) return;
+        if (await crud.delete('quotes', 'quotes_id', id)) {
+          renderers.quotes();
+        }
+      },
+      
+      async deleteContract(id) {
+        if (!confirm('Xóa hợp đồng này?')) return;
+        if (await crud.delete('contracts', 'contract_id', id)) {
+          renderers.contracts();
+        }
+      },
+      
+      async deleteUser(id) {
+        if (!confirm('Xóa user này?')) return;
+        if (await crud.delete('user_profiles', 'id', id)) {
+          renderers.users();
+        }
+      }
+    };
 
-    function applyRoleUI(){ const isElev = ['admin','BOM'].includes(currentUser.role); // hide Services always
-      const servNav = document.querySelector('#sidebarNav .nav-link[data-page="services"]'); if(servNav) servNav.parentElement.style.display='none'; const servCard=document.getElementById('kpiServicesWrap'); if(servCard) servCard.style.display='none';
-      // show/hide based on role
-      const hideForUser = ['projects','opportunities','users'];
-      hideForUser.forEach(pg=>{ const link=document.querySelector(`#sidebarNav .nav-link[data-page="${pg}"]`); if(link) link.parentElement.style.display = isElev ? '' : (pg==='users' ? 'none' : 'none'); });
-      // Users tab visibility already handled in renderUsers
+    /* ===== AUTOCOMPLETE ===== */
+    const autocomplete = {
+      activeIndex: -1,
+      
+      navigate(box, direction) {
+        const items = box.querySelectorAll('.suggestion-item');
+        if (!items.length) return;
+        
+        items[this.activeIndex]?.classList.remove('active');
+        
+        if (direction === 'down') {
+          this.activeIndex = (this.activeIndex + 1) % items.length;
+        } else {
+          this.activeIndex = (this.activeIndex - 1 + items.length) % items.length;
+        }
+        
+        items[this.activeIndex]?.classList.add('active');
+        items[this.activeIndex]?.scrollIntoView({ block: 'nearest' });
+      },
+      
+      select(box) {
+        const active = box.querySelector('.suggestion-item.active');
+        if (active) active.click();
+      },
+      
+      suggestExistingCustomer(q) {
+        const box = document.getElementById('cust_name_sugs');
+        box.innerHTML = '';
+        this.activeIndex = -1;
+        
+        if (!q) {
+          box.classList.add('d-none');
+          return;
+        }
+        
+        const list = state.customers.filter(c =>
+          (c.name || '').toLowerCase().includes(q.toLowerCase()) ||
+          (c.id || '').toLowerCase().includes(q.toLowerCase())
+        );
+        
+        if (list.length) {
+          list.forEach(c => {
+            const d = document.createElement('div');
+            d.className = 'suggestion-item';
+            d.textContent = `${c.id} – ${c.name}`;
+            d.onclick = () => {
+              document.getElementById('cust_id').value = c.id;
+              document.getElementById('cust_name').value = c.name;
+              document.getElementById('cust_contact').value = c.contact_person || '';
+              document.getElementById('cust_phone').value = c.phone || '';
+              document.getElementById('cust_email').value = c.email || '';
+              document.getElementById('cust_address').value = c.address || '';
+              document.getElementById('cust_tax').value = c.tax_code || '';
+              box.classList.add('d-none');
+            };
+            box.appendChild(d);
+          });
+        } else {
+          const d = document.createElement('div');
+          d.className = 'suggestion-item text-primary';
+          d.textContent = '+ Tạo khách hàng mới';
+          d.onclick = () => {
+            const newId = generators.customerId();
+            document.getElementById('cust_id').value = newId;
+            document.getElementById('cust_name').value = q;
+            document.getElementById('cust_contact').value = '';
+            document.getElementById('cust_phone').value = '';
+            document.getElementById('cust_email').value = '';
+            document.getElementById('cust_address').value = '';
+            document.getElementById('cust_tax').value = '';
+            box.classList.add('d-none');
+          };
+          box.appendChild(d);
+        }
+        
+        box.classList.remove('d-none');
+      },
+      
+      suggestCustomer(q, fld) {
+        const box = document.getElementById(`${fld}_sugs`);
+        box.innerHTML = '';
+        this.activeIndex = -1;
+        
+        if (!q) {
+          box.classList.add('d-none');
+          return;
+        }
+        
+        const list = state.customers.filter(c =>
+          (c.name || '').toLowerCase().includes(q.toLowerCase()) ||
+          (c.id || '').toLowerCase().includes(q.toLowerCase())
+        );
+        
+        list.forEach(c => {
+          const d = document.createElement('div');
+          d.className = 'suggestion-item';
+          d.textContent = `${c.id} – ${c.name}`;
+          d.onclick = () => {
+            document.getElementById(fld).value = c.name;
+            const hid = document.getElementById(`${fld}_id`);
+            if (hid) hid.value = c.id;
+            box.classList.add('d-none');
+          };
+          box.appendChild(d);
+        });
+        
+        box.classList.remove('d-none');
+      },
+      
+      suggestProject(q, fld) {
+        const box = document.getElementById(`${fld}_sugs`);
+        box.innerHTML = '';
+        this.activeIndex = -1;
+        
+        const custId = document.getElementById(fld === 'q_project' ? 'q_client_id' : 'ct_client_id')?.value;
+        
+        if (fld === 'q_project' && !custId) {
+          box.innerHTML = `<div class="suggestion-item text-danger">Vui lòng chọn Khách hàng trước</div>`;
+          return box.classList.remove('d-none');
+        }
+        
+        let list = state.projects.filter(p =>
+          (p.project_name || '').toLowerCase().includes(q.toLowerCase()) ||
+          (p.project_id || '').toLowerCase().includes(q.toLowerCase())
+        );
+        
+        if (fld === 'q_project' && custId) {
+          list = list.filter(p => p.customer_id === custId);
+        }
+        
+        if (list.length) {
+          list.forEach(p => {
+            const d = document.createElement('div');
+            d.className = 'suggestion-item';
+            d.textContent = `${p.project_id} – ${p.project_name}`;
+            d.onclick = () => {
+              document.getElementById(fld).value = p.project_name;
+              document.getElementById(`${fld}_id`).value = p.project_id;
+              box.classList.add('d-none');
+            };
+            box.appendChild(d);
+          });
+        } else if (fld === 'q_project') {
+          const d = document.createElement('div');
+          d.className = 'suggestion-item text-primary';
+          d.textContent = '+ Thêm dự án mới';
+          d.onclick = () => {
+            box.classList.add('d-none');
+            ui.showSection('projects');
+            forms.project();
+            setTimeout(() => {
+              document.getElementById('pr_client_id').value = custId;
+              document.getElementById('pr_client').value = document.getElementById('q_client').value;
+            }, 0);
+          };
+          box.appendChild(d);
+        }
+        
+        box.classList.remove('d-none');
+      },
+      
+      suggestQuote(q, fld) {
+        const box = document.getElementById(`${fld}_sugs`);
+        box.innerHTML = '';
+        this.activeIndex = -1;
+        
+        if (!q) {
+          box.classList.add('d-none');
+          return;
+        }
+        
+        const list = state.quotes.filter(x =>
+          (x.quotes_id || '').toLowerCase().includes(q.toLowerCase())
+        );
+        
+        list.forEach(x => {
+          const d = document.createElement('div');
+          d.className = 'suggestion-item';
+          d.textContent = x.quotes_id;
+          d.onclick = () => {
+            document.getElementById(fld).value = x.quotes_id;
+            const hid = document.getElementById(`${fld}_id`);
+            if (hid) hid.value = x.quotes_id;
+            box.classList.add('d-none');
+          };
+          box.appendChild(d);
+        });
+        
+        box.classList.remove('d-none');
+      }
+    };
+
+    /* ===== AUTH FUNCTIONS ===== */
+    const auth = {
+      showOverlay(msg = '') {
+        const el = document.getElementById('authOverlay');
+        if (msg) document.getElementById('authError').textContent = msg;
+        el.classList.remove('d-none');
+      },
+      
+      hideOverlay() {
+        document.getElementById('authError').textContent = '';
+        document.getElementById('authOverlay').classList.add('d-none');
+      },
+      
+      applyRoleUI() {
+        const isElevated = ['admin', 'BOM'].includes(state.currentUser.role);
+        
+        // Hide services (always)
+        document.getElementById('navServices').style.display = 'none';
+        
+        // Hide based on role
+        const hideForUser = ['projects', 'opportunities'];
+        hideForUser.forEach(pg => {
+          const link = document.querySelector(`#sidebarNav .nav-link[data-page="${pg}"]`);
+          if (link) link.parentElement.style.display = isElevated ? '' : 'none';
+        });
+      },
+      
+      async enforceAuth() {
+        try {
+          const { data: { user } } = await sb.auth.getUser();
+          
+          if (!user) {
+            auth.showOverlay();
+            return;
+          }
+          
+          const { data: profile, error } = await sb.from('user_profiles')
+            .select('role, active')
+            .eq('email', user.email)
+            .single();
+          
+          if (error || !profile || !profile.active) {
+            auth.showOverlay('Email đăng nhập không thuộc hệ thống VSEC; hãy liên hệ admin');
+            await sb.auth.signOut();
+            return;
+          }
+          
+          state.currentUser = {
+            email: user.email,
+            role: profile.role || 'user'
+          };
+          
+          document.getElementById('currentEmail').textContent = state.currentUser.email;
+          auth.hideOverlay();
+          
+          await loadData();
+          auth.applyRoleUI();
+          renderAll();
+          ui.showSection('dashboard');
+          
+        } catch (e) {
+          console.error(e);
+          auth.showOverlay('Không thể xác thực. Vui lòng thử lại.');
+        }
+      }
+    };
+
+    /* ===== RENDER ALL ===== */
+    function renderAll() {
+      renderers.dashboard();
+      renderers.customers();
+      renderers.projects();
+      renderers.opportunities();
+      renderers.quotes();
+      renderers.contracts();
+      renderers.users();
     }
 
-    async function enforceAuth(){ try{ const { data:{ user } } = await sb.auth.getUser(); if(!user){ showAuthOverlay(); return; } const { data:prof, error } = await sb.from('user_profiles').select('role, active').eq('email', user.email).single(); if(error || !prof || !prof.active){ showAuthOverlay('email đăng nhập không thuộc hệ thống VSEC; hãy liên hệ admin'); await sb.auth.signOut(); return; } currentUser = { email:user.email, role: (prof.role||'user') }; document.getElementById('currentEmail').textContent = currentUser.email; hideAuthOverlay(); await loadAll(); applyRoleUI(); renderAll(); showSection('dashboard'); }catch(e){ console.error(e); showAuthOverlay('Không thể xác thực. Vui lòng thử lại.'); } }
+    /* ===== EVENT LISTENERS ===== */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sidebar toggle
+      document.getElementById('sidebarToggle').addEventListener('click', () => ui.toggleSidebar());
+      document.getElementById('sidebarBackdrop').addEventListener('click', () => ui.toggleSidebar(false));
+      
+      // Navigation
+      document.querySelectorAll('#sidebarNav .nav-link[data-page]').forEach(a => {
+        a.addEventListener('click', () => ui.showSection(a.dataset.page));
+      });
+      
+      // Add buttons
+      document.getElementById('btnAddCustomer').onclick = () => forms.customer();
+      document.getElementById('btnAddProject').onclick = () => forms.project();
+      document.getElementById('btnAddOpportunity').onclick = () => forms.opportunity();
+      document.getElementById('btnAddQuote').onclick = () => forms.quote();
+      document.getElementById('btnAddContract').onclick = () => forms.contract();
+      document.getElementById('btnAddUser').onclick = () => forms.user();
+      
+      // Auth
+      document.getElementById('btnGoogle').addEventListener('click', () => {
+        sb.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.href }
+        });
+      });
+      
+      document.getElementById('btnSignOut').onclick = async (e) => {
+        e.preventDefault();
+        await sb.auth.signOut();
+        location.reload();
+      };
+      
+      // Global click handler for closing suggestions
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.suggestions') && !e.target.closest('input')) {
+          document.querySelectorAll('.suggestions').forEach(b => b.classList.add('d-none'));
+        }
+      });
+      
+      // Keyboard navigation for autocomplete
+      document.addEventListener('keydown', (e) => {
+        const activeInput = document.activeElement;
+        if (activeInput.tagName === 'INPUT') {
+          const sugsId = activeInput.id + '_sugs';
+          const box = document.getElementById(sugsId);
+          
+          if (box && !box.classList.contains('d-none')) {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              autocomplete.navigate(box, 'down');
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              autocomplete.navigate(box, 'up');
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              autocomplete.select(box);
+            } else if (e.key === 'Escape') {
+              box.classList.add('d-none');
+            }
+          }
+        }
+      });
+      
+      // Auth state change listener
+      sb.auth.onAuthStateChange((_event, _session) => {
+        auth.enforceAuth();
+      });
+      
+      // Initialize
+      auth.enforceAuth();
+    });
 
-    function renderAll(){ renderDashboard(); renderCustomers(); /* services disabled */ renderProjects(); renderOpportunities(); renderQuotes(); renderContracts(); renderUsers(); }
-
-    // Sign in with Google
-    document.addEventListener('click',(e)=>{ if(e.target && e.target.id==='btnGoogle'){ sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href } }); } });
-    sb.auth.onAuthStateChange((_event,_session)=>{ enforceAuth(); });
-
-    // NAV INIT
-    document.querySelectorAll('#sidebarNav .nav-link[data-page]').forEach(a=>{ a.addEventListener('click',()=> showSection(a.dataset.page)); });
-    document.getElementById('btnAddCustomer').onclick = ()=>openCustomerForm();
-    // btnAddService removed (disabled)
-    document.getElementById('btnAddProject').onclick = ()=>openProjectForm();
-    document.getElementById('btnAddOpportunity').onclick = ()=>openOppForm();
-    document.getElementById('btnAddQuote').onclick = ()=>openQuoteForm();
-    document.getElementById('btnAddContract').onclick = ()=>openContractForm();
-    document.getElementById('btnAddUser').onclick = ()=>openUserForm();
-
-    document.getElementById('btnSignOut').onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
-
-    async function init(){ await enforceAuth(); }
-    init();
+    /* ===== GLOBAL FUNCTION EXPORTS ===== */
+    // Export functions to global scope for onclick handlers
+    window.forms = forms;
+    window.handlers = handlers;
+    window.autocomplete = autocomplete;
   </script>
 
   <!-- Bootstrap 5 JS -->
