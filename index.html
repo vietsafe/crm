@@ -1,19 +1,43 @@
-<!doctype html>
+/* ===== CRUD HANDLERS ===== */
+    const handlers = {
+      async saveCustomer(id) {
+        const payload = {
+          name: document.getElementById('cust_name').value.trim(),
+          contact_person: document.getElementById('cust_contact').value || null,
+          phone: document.getElementById('cust_phone').value || null,
+          email: document.getElementById('cust_email').value || null,
+          address: document.getElementById('cust_address').value || null,
+          tax_code: document.getElementById('cust_tax').value || null
+        };
+        
+        if (!payload.name) {
+          utils.showToast('Tên khách hàng không được trống', 'error');
+          return;
+        }
+        
+        const btn = document.querySelector('#customerForm button[type="submit"]');
+        const stopLoading = utils.showLoading(btn);
+        
+        let success;
+        if (id) {
+          success = await crud.update('customers', payload, 'id', id);
+        } else {
+          payload.id = document.getElementById('cust_id').value;
+          payload.created_at = new Date().toISOString();
+          // RLS: created_by sẽ t<!doctype html>
 <html lang="vi">
 <head>
   <!-- =========================================================
-       CRM Bootstrap Full – Improved Version
-       Improvements:
-       - Better mobile responsive
-       - Performance optimization with caching
-       - DRY principle applied
-       - Debounced search
-       - Loading states
-       - Better error handling
+       CRM Bootstrap Full với Supabase RLS
+       Cải tiến:
+       - Tích hợp xác thực Supabase Auth
+       - Row Level Security (RLS) support
+       - Phân quyền người dùng theo created_by
+       - Admin/BOM có quyền xem/sửa tất cả
        ========================================================= -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CRM • Supabase • Bootstrap Admin</title>
+  <title>CRM • Supabase RLS • Bootstrap Admin</title>
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -252,6 +276,13 @@
     .sidebar-backdrop.show {
       display: block;
     }
+
+    /* Permission Indicator */
+    .permission-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
@@ -279,7 +310,7 @@
       <div class="card-body text-center p-4">
         <div class="mb-3"><i class="bi bi-shield-lock" style="font-size:2.5rem;"></i></div>
         <h5 class="fw-bold mb-2">Đăng nhập VSEC CRM</h5>
-        <p class="text-muted small mb-4">Chỉ chấp nhận email nằm trong bảng <code>user_profiles</code> và <code>active = true</code>.</p>
+        <p class="text-muted small mb-4">Đăng nhập bằng Google để truy cập hệ thống CRM.</p>
         <button id="btnGoogle" class="btn btn-dark w-100 mb-2">
           <i class="bi bi-google me-2"></i>Đăng nhập với Google
         </button>
@@ -307,8 +338,11 @@
     <hr>
     <div class="dropdown">
       <a class="d-flex align-items-center text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-        <img src="https://ui-avatars.com/api/?name=CRM&background=0D6EFD&color=fff" alt="" width="32" height="32" class="rounded-circle me-2">
-        <strong id="currentEmail">guest@local</strong>
+        <img id="userAvatar" src="https://ui-avatars.com/api/?name=CRM&background=0D6EFD&color=fff" alt="" width="32" height="32" class="rounded-circle me-2">
+        <div>
+          <strong id="currentEmail">guest@local</strong>
+          <div><span id="currentRole" class="badge bg-secondary">user</span></div>
+        </div>
       </a>
       <ul class="dropdown-menu shadow">
         <li><a class="dropdown-item" href="#" id="btnSignOut"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
@@ -343,7 +377,7 @@
         <div id="customerFormWrap" class="d-none"></div>
         <div class="card card-shadow"><div class="card-body p-0 table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>ID</th><th>Name</th><th class="d-none d-md-table-cell">Contact</th><th class="d-none d-lg-table-cell">Phone</th><th class="d-none d-lg-table-cell">Email</th><th class="d-none d-xl-table-cell">Tax</th><th style="width:100px;">Actions</th></tr></thead>
+            <thead class="table-light"><tr><th>ID</th><th>Name</th><th class="d-none d-md-table-cell">Contact</th><th class="d-none d-lg-table-cell">Phone</th><th class="d-none d-lg-table-cell">Email</th><th class="d-none d-xl-table-cell">Tax</th><th style="width:120px;">Actions</th></tr></thead>
             <tbody id="customerTbody"></tbody>
           </table>
         </div></div>
@@ -361,7 +395,7 @@
         <div id="projectFormWrap" class="d-none"></div>
         <div class="card card-shadow"><div class="card-body p-0 table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>ID</th><th>Tên dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th class="d-none d-lg-table-cell">Start</th><th class="d-none d-lg-table-cell">End</th><th>Status</th><th style="width:100px;">Actions</th></tr></thead>
+            <thead class="table-light"><tr><th>ID</th><th>Tên dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th class="d-none d-lg-table-cell">Start</th><th class="d-none d-lg-table-cell">End</th><th>Status</th><th style="width:120px;">Actions</th></tr></thead>
             <tbody id="projectTbody"></tbody>
           </table>
         </div></div>
@@ -376,7 +410,7 @@
         <div id="oppFormWrap" class="d-none"></div>
         <div class="card card-shadow"><div class="card-body p-0 table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>ID</th><th>Tên cơ hội</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Stage</th><th style="width:100px;">Actions</th></tr></thead>
+            <thead class="table-light"><tr><th>ID</th><th>Tên cơ hội</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Stage</th><th style="width:120px;">Actions</th></tr></thead>
             <tbody id="oppTbody"></tbody>
           </table>
         </div></div>
@@ -401,7 +435,7 @@
                 <th class="d-none d-md-table-cell">Status</th>
                 <th class="d-none d-lg-table-cell">Lần gửi</th>
                 <th class="d-none d-xl-table-cell">PDF</th>
-                <th style="width:100px;">Actions</th>
+                <th style="width:120px;">Actions</th>
               </tr>
             </thead>
             <tbody id="quoteTbody"></tbody>
@@ -418,7 +452,7 @@
         <div id="contractFormWrap" class="d-none"></div>
         <div class="card card-shadow"><div class="card-body p-0 table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>ID</th><th>Dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Status</th><th style="width:100px;">Actions</th></tr></thead>
+            <thead class="table-light"><tr><th>ID</th><th>Dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Status</th><th style="width:120px;">Actions</th></tr></thead>
             <tbody id="contractTbody"></tbody>
           </table>
         </div></div>
@@ -433,7 +467,7 @@
         <div id="userFormWrap" class="d-none"></div>
         <div class="card card-shadow"><div class="card-body p-0 table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>Email</th><th>Role</th><th>Active</th><th style="width:100px;">Actions</th></tr></thead>
+            <thead class="table-light"><tr><th>Email</th><th>Role</th><th>Active</th><th style="width:120px;">Actions</th></tr></thead>
             <tbody id="userTbody"></tbody>
           </table>
         </div></div>
@@ -452,12 +486,501 @@
       TOAST_DURATION: 3000
     };
 
+    /* ===== FORM BUILDERS ===== */
+    const crmForms = {
+      customer(id = '', viewOnly = false) {
+        const wrap = document.getElementById('customerFormWrap');
+        const isEdit = !!id;
+        
+        // RLS: Kiểm tra quyền chỉnh sửa
+        if (isEdit && !viewOnly) {
+          const customer = state.customers.find(x => x.id === id);
+          if (customer && !utils.canEdit(customer)) {
+            utils.showToast('Bạn không có quyền sửa khách hàng này', 'error');
+            return;
+          }
+        }
+        
+        const c = isEdit ? state.customers.find(x => x.id === id) : {};
+        
+        wrap.classList.remove('d-none');
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${viewOnly ? 'Xem' : (isEdit ? 'Sửa' : 'Thêm')} khách hàng</h5>
+              <form id="customerForm">
+                <div class="row g-3">
+                  <div class="col-md-2">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="cust_id" value="${isEdit ? c.id : generators.customerId()}">
+                  </div>
+                  <div class="col-md-10 position-relative">
+                    <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="cust_name" value="${c?.name || ''}" autocomplete="off" ${viewOnly ? 'disabled' : 'required'}>
+                    <div id="cust_name_sugs" class="suggestions d-none"></div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Người liên hệ</label>
+                    <input class="form-control" id="cust_contact" value="${c?.contact_person || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Phone</label>
+                    <input class="form-control" id="cust_phone" value="${c?.phone || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="cust_email" value="${c?.email || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label">Địa chỉ</label>
+                    <input class="form-control" id="cust_address" value="${c?.address || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Mã số thuế</label>
+                    <input class="form-control" id="cust_tax" value="${c?.tax_code || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  ${!viewOnly ? `
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-check2-circle me-1"></i>Lưu
+                    </button>
+                  ` : ''}
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('customerFormWrap').classList.add('d-none')">
+                    ${viewOnly ? 'Đóng' : 'Hủy'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        if (!viewOnly) {
+          // Attach events
+          document.getElementById('customerForm').onsubmit = (e) => {
+            e.preventDefault();
+            handlers.saveCustomer(id);
+          };
+          
+          const nameInput = document.getElementById('cust_name');
+          nameInput.oninput = utils.debounce(() => autocomplete.suggestExistingCustomer(nameInput.value), CONFIG.DEBOUNCE_DELAY);
+        }
+      },
+      
+      project(id = '', viewOnly = false) {
+        const wrap = document.getElementById('projectFormWrap');
+        const isEdit = !!id;
+        
+        // RLS: Kiểm tra quyền chỉnh sửa
+        if (isEdit && !viewOnly) {
+          const project = state.projects.find(x => x.project_id === id);
+          if (project && !utils.canEdit(project)) {
+            utils.showToast('Bạn không có quyền sửa dự án này', 'error');
+            return;
+          }
+        }
+        
+        const p = isEdit ? state.projects.find(x => x.project_id === id) : {};
+        const customer = state.cache.customerMap.get(p?.customer_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${viewOnly ? 'Xem' : (isEdit ? 'Sửa' : 'Thêm')} dự án</h5>
+              <form id="projectForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="pr_id" value="${isEdit ? p.project_id : generators.projectId()}">
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label">Tên dự án <span class="text-danger">*</span></label>
+                    <input class="form-control" id="pr_name" value="${p?.project_name || ''}" ${viewOnly ? 'disabled' : 'required'}>
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="pr_client" autocomplete="off" value="${customer?.name || ''}" ${viewOnly ? 'disabled' : 'required'}>
+                    <div id="pr_client_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="pr_client_id" value="${p?.customer_id || ''}">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Start</label>
+                    <input type="date" class="form-control" id="pr_start" value="${p?.start_date || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">End</label>
+                    <input type="date" class="form-control" id="pr_end" value="${p?.end_date || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="pr_status" ${viewOnly ? 'disabled' : ''}>
+                      <option ${p?.status === 'Chuẩn bị' ? 'selected' : ''}>Chuẩn bị</option>
+                      <option ${p?.status === 'Đang triển khai' ? 'selected' : ''}>Đang triển khai</option>
+                      <option ${p?.status === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" rows="2" id="pr_desc" ${viewOnly ? 'disabled' : ''}>${p?.description || ''}</textarea>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  ${!viewOnly ? `
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-check2-circle me-1"></i>Lưu
+                    </button>
+                  ` : ''}
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('projectFormWrap').classList.add('d-none')">
+                    ${viewOnly ? 'Đóng' : 'Hủy'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        if (!viewOnly) {
+          document.getElementById('projectForm').onsubmit = (e) => {
+            e.preventDefault();
+            handlers.saveProject(id);
+          };
+          
+          const clientInput = document.getElementById('pr_client');
+          clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'pr_client'), CONFIG.DEBOUNCE_DELAY);
+        }
+      },
+      
+      opportunity(id = '', viewOnly = false) {
+        const wrap = document.getElementById('oppFormWrap');
+        const isEdit = !!id;
+        
+        // RLS: Kiểm tra quyền chỉnh sửa
+        if (isEdit && !viewOnly) {
+          const opportunity = state.opportunities.find(x => x.opportunity_id === id);
+          if (opportunity && !utils.canEdit(opportunity)) {
+            utils.showToast('Bạn không có quyền sửa cơ hội này', 'error');
+            return;
+          }
+        }
+        
+        const o = isEdit ? state.opportunities.find(x => x.opportunity_id === id) : {};
+        const customer = state.cache.customerMap.get(o?.customer_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${viewOnly ? 'Xem' : (isEdit ? 'Sửa' : 'Thêm')} cơ hội</h5>
+              <form id="oppForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="op_id" value="${isEdit ? o.opportunity_id : generators.opportunityId()}">
+                  </div>
+                  <div class="col-md-9">
+                    <label class="form-label">Tên cơ hội <span class="text-danger">*</span></label>
+                    <input class="form-control" id="op_name" value="${o?.name || ''}" ${viewOnly ? 'disabled' : 'required'}>
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="op_client" autocomplete="off" value="${customer?.name || ''}" ${viewOnly ? 'disabled' : 'required'}>
+                    <div id="op_client_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="op_client_id" value="${o?.customer_id || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Giá trị kỳ vọng</label>
+                    <input type="number" class="form-control" id="op_val" value="${o?.expected_value || 0}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Stage</label>
+                    <select class="form-select" id="op_stage" ${viewOnly ? 'disabled' : ''}>
+                      <option ${o?.stage === 'mới' ? 'selected' : ''}>mới</option>
+                      <option ${o?.stage === 'đánh giá' ? 'selected' : ''}>đánh giá</option>
+                      <option ${o?.stage === 'đàm phán' ? 'selected' : ''}>đàm phán</option>
+                      <option ${o?.stage === 'đã thắng' ? 'selected' : ''}>đã thắng</option>
+                      <option ${o?.stage === 'đã mất' ? 'selected' : ''}>đã mất</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  ${!viewOnly ? `
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-check2-circle me-1"></i>Lưu
+                    </button>
+                  ` : ''}
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('oppFormWrap').classList.add('d-none')">
+                    ${viewOnly ? 'Đóng' : 'Hủy'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        if (!viewOnly) {
+          document.getElementById('oppForm').onsubmit = (e) => {
+            e.preventDefault();
+            handlers.saveOpportunity(id);
+          };
+          
+          const clientInput = document.getElementById('op_client');
+          clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'op_client'), CONFIG.DEBOUNCE_DELAY);
+        }
+      },
+      
+      quote(id = '', viewOnly = false) {
+        const wrap = document.getElementById('quoteFormWrap');
+        const isEdit = !!id;
+        
+        // RLS: Kiểm tra quyền chỉnh sửa
+        if (isEdit && !viewOnly) {
+          const quote = state.quotes.find(x => x.quotes_id === id);
+          if (quote && !utils.canEdit(quote)) {
+            utils.showToast('Bạn không có quyền sửa báo giá này', 'error');
+            return;
+          }
+        }
+        
+        const q = isEdit ? state.quotes.find(x => x.quotes_id === id) : {};
+        const customer = state.cache.customerMap.get(q?.customer_id);
+        const project = state.cache.projectMap.get(q?.project_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${viewOnly ? 'Xem' : (isEdit ? 'Sửa' : 'Thêm')} báo giá</h5>
+              <form id="quoteForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="q_id" value="${isEdit ? q.quotes_id : generators.quoteId()}">
+                  </div>
+                  <div class="col-md-9 position-relative">
+                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                    <input class="form-control" id="q_client" autocomplete="off" value="${customer?.name || ''}" ${viewOnly ? 'disabled' : 'required'}>
+                    <div id="q_client_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="q_client_id" value="${q?.customer_id || ''}">
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Dự án</label>
+                    <input class="form-control" id="q_project" autocomplete="off" value="${project?.project_name || ''}" ${viewOnly ? 'disabled' : ''}>
+                    <div id="q_project_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="q_project_id" value="${q?.project_id || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Số tiền</label>
+                    <input type="number" class="form-control" id="q_amount" value="${q?.amount || 0}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Nội dung</label>
+                    <textarea class="form-control" rows="2" id="q_desc" ${viewOnly ? 'disabled' : ''}>${q?.description || ''}</textarea>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="q_status" ${viewOnly ? 'disabled' : ''}>
+                      <option ${q?.status === 'nháp' ? 'selected' : ''}>nháp</option>
+                      <option ${q?.status === 'đã gửi' ? 'selected' : ''}>đã gửi</option>
+                      <option ${q?.status === 'chấp nhận' ? 'selected' : ''}>chấp nhận</option>
+                      <option ${q?.status === 'từ chối' ? 'selected' : ''}>từ chối</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Lần gửi</label>
+                    <input type="number" class="form-control" id="q_send" value="${q?.send_count || 0}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">PDF URL</label>
+                    <input class="form-control" id="q_pdf" placeholder="https://...pdf" value="${q?.pdf_url || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  ${!viewOnly ? `
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-check2-circle me-1"></i>Lưu báo giá
+                    </button>
+                  ` : ''}
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('quoteFormWrap').classList.add('d-none')">
+                    ${viewOnly ? 'Đóng' : 'Hủy'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        if (!viewOnly) {
+          document.getElementById('quoteForm').onsubmit = (e) => {
+            e.preventDefault();
+            handlers.saveQuote(id);
+          };
+          
+          const clientInput = document.getElementById('q_client');
+          clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'q_client'), CONFIG.DEBOUNCE_DELAY);
+          
+          const projectInput = document.getElementById('q_project');
+          projectInput.oninput = utils.debounce(() => autocomplete.suggestProject(projectInput.value, 'q_project'), CONFIG.DEBOUNCE_DELAY);
+        }
+      },
+      
+      contract(id = '', viewOnly = false) {
+        const wrap = document.getElementById('contractFormWrap');
+        const isEdit = !!id;
+        
+        // RLS: Kiểm tra quyền chỉnh sửa
+        if (isEdit && !viewOnly) {
+          const contract = state.contracts.find(x => x.contract_id === id);
+          if (contract && !utils.canEdit(contract)) {
+            utils.showToast('Bạn không có quyền sửa hợp đồng này', 'error');
+            return;
+          }
+        }
+        
+        const ct = isEdit ? state.contracts.find(x => x.contract_id === id) : {};
+        const project = state.cache.projectMap.get(ct?.project_id);
+        
+        wrap.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${viewOnly ? 'Xem' : (isEdit ? 'Sửa' : 'Thêm')} hợp đồng</h5>
+              <form id="contractForm">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">ID</label>
+                    <input class="form-control" disabled id="ct_id" value="${isEdit ? ct.contract_id : generators.contractId()}">
+                  </div>
+                  <div class="col-md-9 position-relative">
+                    <label class="form-label">Dự án <span class="text-danger">*</span></label>
+                    <input class="form-control" id="ct_proj" autocomplete="off" value="${project?.project_name || ''}" ${viewOnly ? 'disabled' : 'required'}>
+                    <div id="ct_proj_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="ct_proj_id" value="${ct?.project_id || ''}">
+                  </div>
+                  <div class="col-md-6 position-relative">
+                    <label class="form-label">Báo giá (tùy chọn)</label>
+                    <input class="form-control" id="ct_quote" autocomplete="off" value="${ct?.quotes_id || ''}" ${viewOnly ? 'disabled' : ''}>
+                    <div id="ct_quote_sugs" class="suggestions d-none"></div>
+                    <input type="hidden" id="ct_quote_id" value="${ct?.quotes_id || ''}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Giá trị</label>
+                    <input type="number" class="form-control" id="ct_val" value="${ct?.value || 0}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Ngày HĐ</label>
+                    <input type="date" class="form-control" id="ct_date" value="${ct?.contract_date || ''}" ${viewOnly ? 'disabled' : ''}>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" id="ct_status" ${viewOnly ? 'disabled' : ''}>
+                      <option ${ct?.status === 'hiệu lực' ? 'selected' : ''}>hiệu lực</option>
+                      <option ${ct?.status === 'hoàn thành' ? 'selected' : ''}>hoàn thành</option>
+                      <option ${ct?.status === 'hủy' ? 'selected' : ''}>hủy</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  ${!viewOnly ? `
+                    <button type="submit" class="btn btn-primary">
+                      <i class="bi bi-check2-circle me-1"></i>Lưu
+                    </button>
+                  ` : ''}
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('contractFormWrap').classList.add('d-none')">
+                    ${viewOnly ? 'Đóng' : 'Hủy'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        if (!viewOnly) {
+          document.getElementById('contractForm').onsubmit = (e) => {
+            e.preventDefault();
+            handlers.saveContract(id);
+          };
+          
+          const projInput = document.getElementById('ct_proj');
+          projInput.oninput = utils.debounce(() => autocomplete.suggestProject(projInput.value, 'ct_proj'), CONFIG.DEBOUNCE_DELAY);
+          
+          const quoteInput = document.getElementById('ct_quote');
+          quoteInput.oninput = utils.debounce(() => autocomplete.suggestQuote(quoteInput.value, 'ct_quote'), CONFIG.DEBOUNCE_DELAY);
+        }
+      },
+      
+      user(id = '') {
+        const wrap = document.getElementById('userFormWrap');
+        const isEdit = !!id;
+        const u = isEdit ? state.users.find(x => x.id === id) : {};
+        
+        wrap.classList.remove('d-none');
+        wrap.innerHTML = `
+          <div class="card card-shadow mb-4 fade-in">
+            <div class="card-body">
+              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} user</h5>
+              <form id="userForm">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="us_email" value="${u?.email || ''}" ${isEdit ? 'disabled' : 'required'}>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" id="us_role">
+                      <option value="user" ${u?.role === 'user' ? 'selected' : ''}>user</option>
+                      <option value="admin" ${u?.role === 'admin' ? 'selected' : ''}>admin</option>
+                      <option value="BOM" ${u?.role === 'BOM' ? 'selected' : ''}>BOM</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">Active</label>
+                    <select class="form-select" id="us_active">
+                      <option value="true" ${u?.active ? 'selected' : ''}>true</option>
+                      <option value="false" ${!u?.active ? 'selected' : ''}>false</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i>Lưu
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('userFormWrap').classList.add('d-none')">
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('userForm').onsubmit = (e) => {
+          e.preventDefault();
+          handlers.saveUser(id);
+        };
+      }
+    };
+
     /* ===== SUPABASE CLIENT ===== */
     const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
     /* ===== APPLICATION STATE ===== */
     const state = {
-      currentUser: { email: null, role: 'user' },
+      currentUser: { 
+        id: null,      // UUID từ auth.uid() 
+        email: null, 
+        role: 'user' 
+      },
       customers: [],
       services: [],
       projects: [],
@@ -519,6 +1042,26 @@
           element.innerHTML = originalContent;
           element.disabled = false;
         };
+      },
+
+      // RLS: Kiểm tra quyền chỉnh sửa record
+      canEdit(record) {
+        // Admin/BOM có quyền sửa tất cả
+        if (['admin', 'BOM'].includes(state.currentUser.role)) {
+          return true;
+        }
+        
+        // User chỉ được sửa record do họ tạo ra
+        return record.created_by === state.currentUser.id;
+      },
+
+      // Tạo badge hiển thị quyền
+      getPermissionBadge(record) {
+        if (this.canEdit(record)) {
+          return '<span class="permission-badge bg-success text-white">Edit</span>';
+        } else {
+          return '<span class="permission-badge bg-warning text-dark">View</span>';
+        }
       }
     };
 
@@ -585,55 +1128,6 @@
       }
     };
 
-    /* ===== LOCAL STORAGE HELPERS ===== */
-    const storage = {
-      getMyCustomerIds() {
-        try {
-          const map = JSON.parse(localStorage.getItem('myCustomers') || '{}');
-          return map[state.currentUser.email] || [];
-        } catch {
-          return [];
-        }
-      },
-      
-      pushMyCustomerId(id) {
-        try {
-          const map = JSON.parse(localStorage.getItem('myCustomers') || '{}');
-          map[state.currentUser.email] = map[state.currentUser.email] || [];
-          if (!map[state.currentUser.email].includes(id)) {
-            map[state.currentUser.email].push(id);
-          }
-          localStorage.setItem('myCustomers', JSON.stringify(map));
-        } catch {}
-      },
-      
-      // Track who created what
-      getCreatedBy(table) {
-        try {
-          const data = JSON.parse(localStorage.getItem(`createdBy_${table}`) || '{}');
-          return data;
-        } catch {
-          return {};
-        }
-      },
-      
-      setCreatedBy(table, id, email) {
-        try {
-          const data = this.getCreatedBy(table);
-          data[id] = email;
-          localStorage.setItem(`createdBy_${table}`, JSON.stringify(data));
-        } catch {}
-      },
-      
-      canEdit(table, id) {
-        const isElevated = ['admin', 'BOM'].includes(state.currentUser.role);
-        if (isElevated) return true;
-        
-        const createdBy = this.getCreatedBy(table);
-        return createdBy[id] === state.currentUser.email;
-      }
-    };
-
     /* ===== UI HELPERS ===== */
     const ui = {
       showSection(page) {
@@ -687,6 +1181,7 @@
     /* ===== DATA LOADING ===== */
     async function loadData() {
       try {
+        // RLS: Với RLS enabled, mỗi user chỉ load được data thuộc quyền của họ
         const [customersRes, projectsRes, opportunitiesRes, quotesRes, contractsRes, usersRes] = await Promise.all([
           sb.from('customers').select('*').order('id'),
           sb.from('projects').select('*').order('project_id'),
@@ -695,6 +1190,13 @@
           sb.from('contracts').select('*').order('contract_id'),
           sb.from('user_profiles').select('*')
         ]);
+
+        if (customersRes.error) console.error('Error loading customers:', customersRes.error);
+        if (projectsRes.error) console.error('Error loading projects:', projectsRes.error);
+        if (opportunitiesRes.error) console.error('Error loading opportunities:', opportunitiesRes.error);
+        if (quotesRes.error) console.error('Error loading quotes:', quotesRes.error);
+        if (contractsRes.error) console.error('Error loading contracts:', contractsRes.error);
+        if (usersRes.error) console.error('Error loading users:', usersRes.error);
 
         state.customers = customersRes.data || [];
         state.projects = projectsRes.data || [];
@@ -720,12 +1222,14 @@
     const crud = {
       async create(table, data) {
         try {
+          // RLS: created_by sẽ tự động được set = auth.uid() bởi database default
           const { error } = await sb.from(table).insert([data]);
           if (error) throw error;
           await loadData();
           utils.showToast('Thêm mới thành công');
           return true;
         } catch (error) {
+          console.error('Create error:', error);
           utils.showToast(error.message, 'error');
           return false;
         }
@@ -739,6 +1243,7 @@
           utils.showToast('Cập nhật thành công');
           return true;
         } catch (error) {
+          console.error('Update error:', error);
           utils.showToast(error.message, 'error');
           return false;
         }
@@ -752,6 +1257,7 @@
           utils.showToast('Xóa thành công');
           return true;
         } catch (error) {
+          console.error('Delete error:', error);
           utils.showToast(error.message, 'error');
           return false;
         }
@@ -766,16 +1272,9 @@
       
       customers() {
         const tbody = document.getElementById('customerTbody');
-        let list = state.customers;
         
-        const isElevated = ['admin', 'BOM'].includes(state.currentUser.role);
-        if (!isElevated) {
-          const allowedIds = storage.getMyCustomerIds();
-          list = state.customers.filter(c => allowedIds.includes(c.id));
-        }
-        
-        tbody.innerHTML = list.map(c => {
-          const canEdit = storage.canEdit('customers', c.id);
+        tbody.innerHTML = state.customers.map(c => {
+          const canEdit = utils.canEdit(c);
           return `
             <tr>
               <td>${c.id}</td>
@@ -785,15 +1284,22 @@
               <td class="d-none d-lg-table-cell">${c.email || ''}</td>
               <td class="d-none d-xl-table-cell">${c.tax_code || ''}</td>
               <td>
-                <div class="btn-group btn-group-sm">
-                  ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmForms.customer('${c.id}')">
-                      <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="handlers.deleteCustomer('${c.id}')">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  ` : '<span class="text-muted small">Chỉ xem</span>'}
+                <div class="d-flex flex-column gap-1">
+                  ${utils.getPermissionBadge(c)}
+                  <div class="btn-group btn-group-sm">
+                    ${canEdit ? `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.customer('${c.id}')">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="handlers.deleteCustomer('${c.id}')">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    ` : `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.customer('${c.id}', true)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    `}
+                  </div>
                 </div>
               </td>
             </tr>
@@ -805,7 +1311,7 @@
         const tbody = document.getElementById('projectTbody');
         tbody.innerHTML = state.projects.map(p => {
           const customer = state.cache.customerMap.get(p.customer_id);
-          const canEdit = storage.canEdit('projects', p.project_id);
+          const canEdit = utils.canEdit(p);
           return `
             <tr>
               <td>${p.project_id}</td>
@@ -815,15 +1321,22 @@
               <td class="d-none d-lg-table-cell">${p.end_date || ''}</td>
               <td><span class="badge bg-secondary">${p.status || ''}</span></td>
               <td>
-                <div class="btn-group btn-group-sm">
-                  ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmForms.project('${p.project_id}')">
-                      <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="handlers.deleteProject('${p.project_id}')">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  ` : '<span class="text-muted small">Chỉ xem</span>'}
+                <div class="d-flex flex-column gap-1">
+                  ${utils.getPermissionBadge(p)}
+                  <div class="btn-group btn-group-sm">
+                    ${canEdit ? `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.project('${p.project_id}')">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="handlers.deleteProject('${p.project_id}')">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    ` : `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.project('${p.project_id}', true)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    `}
+                  </div>
                 </div>
               </td>
             </tr>
@@ -835,7 +1348,7 @@
         const tbody = document.getElementById('oppTbody');
         tbody.innerHTML = state.opportunities.map(o => {
           const customer = state.cache.customerMap.get(o.customer_id);
-          const canEdit = storage.canEdit('opportunities', o.opportunity_id);
+          const canEdit = utils.canEdit(o);
           return `
             <tr>
               <td>${o.opportunity_id}</td>
@@ -844,15 +1357,22 @@
               <td>${utils.money(o.expected_value)}</td>
               <td><span class="badge bg-info">${o.stage || ''}</span></td>
               <td>
-                <div class="btn-group btn-group-sm">
-                  ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmForms.opportunity('${o.opportunity_id}')">
-                      <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="handlers.deleteOpportunity('${o.opportunity_id}')">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  ` : '<span class="text-muted small">Chỉ xem</span>'}
+                <div class="d-flex flex-column gap-1">
+                  ${utils.getPermissionBadge(o)}
+                  <div class="btn-group btn-group-sm">
+                    ${canEdit ? `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.opportunity('${o.opportunity_id}')">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="handlers.deleteOpportunity('${o.opportunity_id}')">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    ` : `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.opportunity('${o.opportunity_id}', true)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    `}
+                  </div>
                 </div>
               </td>
             </tr>
@@ -865,7 +1385,7 @@
         tbody.innerHTML = state.quotes.map(q => {
           const customer = state.cache.customerMap.get(q.customer_id);
           const project = state.cache.projectMap.get(q.project_id);
-          const canEdit = storage.canEdit('quotes', q.quotes_id);
+          const canEdit = utils.canEdit(q);
           return `
             <tr>
               <td>${q.quotes_id}</td>
@@ -877,15 +1397,22 @@
               <td class="d-none d-lg-table-cell">${q.send_count || 0}</td>
               <td class="d-none d-xl-table-cell">${q.pdf_url ? `<a href="${q.pdf_url}" target="_blank">PDF</a>` : ''}</td>
               <td>
-                <div class="btn-group btn-group-sm">
-                  ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmForms.quote('${q.quotes_id}')">
-                      <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="handlers.deleteQuote('${q.quotes_id}')">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  ` : '<span class="text-muted small">Chỉ xem</span>'}
+                <div class="d-flex flex-column gap-1">
+                  ${utils.getPermissionBadge(q)}
+                  <div class="btn-group btn-group-sm">
+                    ${canEdit ? `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.quote('${q.quotes_id}')">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="handlers.deleteQuote('${q.quotes_id}')">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    ` : `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.quote('${q.quotes_id}', true)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    `}
+                  </div>
                 </div>
               </td>
             </tr>
@@ -898,7 +1425,7 @@
         tbody.innerHTML = state.contracts.map(ct => {
           const project = state.cache.projectMap.get(ct.project_id);
           const customer = state.cache.customerMap.get(ct.customer_id);
-          const canEdit = storage.canEdit('contracts', ct.contract_id);
+          const canEdit = utils.canEdit(ct);
           return `
             <tr>
               <td>${ct.contract_id}</td>
@@ -907,15 +1434,22 @@
               <td>${utils.money(ct.value)}</td>
               <td><span class="badge bg-success">${ct.status || ''}</span></td>
               <td>
-                <div class="btn-group btn-group-sm">
-                  ${canEdit ? `
-                    <button class="btn btn-outline-secondary" onclick="crmForms.contract('${ct.contract_id}')">
-                      <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="handlers.deleteContract('${ct.contract_id}')">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  ` : '<span class="text-muted small">Chỉ xem</span>'}
+                <div class="d-flex flex-column gap-1">
+                  ${utils.getPermissionBadge(ct)}
+                  <div class="btn-group btn-group-sm">
+                    ${canEdit ? `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.contract('${ct.contract_id}')">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="handlers.deleteContract('${ct.contract_id}')">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    ` : `
+                      <button class="btn btn-outline-secondary" onclick="crmForms.contract('${ct.contract_id}', true)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    `}
+                  </div>
                 </div>
               </td>
             </tr>
@@ -924,9 +1458,11 @@
       },
       
       users() {
-        const me = state.users.find(u => u.email === state.currentUser.email);
-        const canSee = me && ['admin', 'BOM'].includes(me.role);
-        document.getElementById('navUsers').style.display = canSee ? '' : 'none';
+        // Chỉ admin/BOM mới thấy Users tab
+        const canSeeUsers = ['admin', 'BOM'].includes(state.currentUser.role);
+        document.getElementById('navUsers').style.display = canSeeUsers ? '' : 'none';
+        
+        if (!canSeeUsers) return;
         
         const tbody = document.getElementById('userTbody');
         tbody.innerHTML = state.users.map(u => `
@@ -948,1145 +1484,3 @@
         `).join('');
       }
     };
-
-    /* ===== FORM BUILDERS ===== */
-    const crmForms = {
-      customer(id = '') {
-        const wrap = document.getElementById('customerFormWrap');
-        const isEdit = !!id;
-        
-        // Check permission for edit
-        if (isEdit && !storage.canEdit('customers', id)) {
-          utils.showToast('Bạn không có quyền sửa khách hàng này', 'error');
-          return;
-        }
-        
-        const c = isEdit ? state.customers.find(x => x.id === id) : {};
-        
-        wrap.classList.remove('d-none');
-        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        
-        wrap.innerHTML = `
-          <div class="card card-shadow mb-4 fade-in">
-            <div class="card-body">
-              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} khách hàng</h5>
-              <form id="customerForm">
-                <div class="row g-3">
-                  <div class="col-md-2">
-                    <label class="form-label">ID</label>
-                    <input class="form-control" disabled id="cust_id" value="${isEdit ? c.id : generators.customerId()}">
-                  </div>
-                  <div class="col-md-10 position-relative">
-                    <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
-                    <input class="form-control" id="cust_name" value="${c?.name || ''}" autocomplete="off" required>
-                    <div id="cust_name_sugs" class="suggestions d-none"></div>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Người liên hệ</label>
-                    <input class="form-control" id="cust_contact" value="${c?.contact_person || ''}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Phone</label>
-                    <input class="form-control" id="cust_phone" value="${c?.phone || ''}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="cust_email" value="${c?.email || ''}">
-                  </div>
-                  <div class="col-md-8">
-                    <label class="form-label">Địa chỉ</label>
-                    <input class="form-control" id="cust_address" value="${c?.address || ''}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Mã số thuế</label>
-                    <input class="form-control" id="cust_tax" value="${c?.tax_code || ''}">
-                  </div>
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i>Lưu
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('customerFormWrap').classList.add('d-none')">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        `;
-        
-        // Attach events
-        document.getElementById('customerForm').onsubmit = (e) => {
-          e.preventDefault();
-          handlers.saveCustomer(id);
-        };
-        
-        const nameInput = document.getElementById('cust_name');
-        nameInput.oninput = utils.debounce(() => autocomplete.suggestExistingCustomer(nameInput.value), CONFIG.DEBOUNCE_DELAY);
-      },
-      
-      project(id = '') {
-        const wrap = document.getElementById('projectFormWrap');
-        const isEdit = !!id;
-        
-        // Check permission for edit
-        if (isEdit && !storage.canEdit('projects', id)) {
-          utils.showToast('Bạn không có quyền sửa dự án này', 'error');
-          return;
-        }
-        
-        const p = isEdit ? state.projects.find(x => x.project_id === id) : {};
-        const customer = state.cache.customerMap.get(p?.customer_id);
-        
-        wrap.classList.remove('d-none');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        wrap.innerHTML = `
-          <div class="card card-shadow mb-4 fade-in">
-            <div class="card-body">
-              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} dự án</h5>
-              <form id="projectForm">
-                <div class="row g-3">
-                  <div class="col-md-3">
-                    <label class="form-label">ID</label>
-                    <input class="form-control" disabled id="pr_id" value="${isEdit ? p.project_id : generators.projectId()}">
-                  </div>
-                  <div class="col-md-9">
-                    <label class="form-label">Tên dự án <span class="text-danger">*</span></label>
-                    <input class="form-control" id="pr_name" value="${p?.project_name || ''}" required>
-                  </div>
-                  <div class="col-md-6 position-relative">
-                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
-                    <input class="form-control" id="pr_client" autocomplete="off" value="${customer?.name || ''}" required>
-                    <div id="pr_client_sugs" class="suggestions d-none"></div>
-                    <input type="hidden" id="pr_client_id" value="${p?.customer_id || ''}">
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">Start</label>
-                    <input type="date" class="form-control" id="pr_start" value="${p?.start_date || ''}">
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">End</label>
-                    <input type="date" class="form-control" id="pr_end" value="${p?.end_date || ''}">
-                  </div>
-                  <div class="col-md-12">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" id="pr_status">
-                      <option ${p?.status === 'Chuẩn bị' ? 'selected' : ''}>Chuẩn bị</option>
-                      <option ${p?.status === 'Đang triển khai' ? 'selected' : ''}>Đang triển khai</option>
-                      <option ${p?.status === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
-                    </select>
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label">Mô tả</label>
-                    <textarea class="form-control" rows="2" id="pr_desc">${p?.description || ''}</textarea>
-                  </div>
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i>Lưu
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('projectFormWrap').classList.add('d-none')">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        `;
-        
-        document.getElementById('projectForm').onsubmit = (e) => {
-          e.preventDefault();
-          handlers.saveProject(id);
-        };
-        
-        const clientInput = document.getElementById('pr_client');
-        clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'pr_client'), CONFIG.DEBOUNCE_DELAY);
-      },
-      
-      opportunity(id = '') {
-        const wrap = document.getElementById('oppFormWrap');
-        const isEdit = !!id;
-        
-        // Check permission for edit
-        if (isEdit && !storage.canEdit('opportunities', id)) {
-          utils.showToast('Bạn không có quyền sửa cơ hội này', 'error');
-          return;
-        }
-        
-        const o = isEdit ? state.opportunities.find(x => x.opportunity_id === id) : {};
-        const customer = state.cache.customerMap.get(o?.customer_id);
-        
-        wrap.classList.remove('d-none');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        wrap.innerHTML = `
-          <div class="card card-shadow mb-4 fade-in">
-            <div class="card-body">
-              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} cơ hội</h5>
-              <form id="oppForm">
-                <div class="row g-3">
-                  <div class="col-md-3">
-                    <label class="form-label">ID</label>
-                    <input class="form-control" disabled id="op_id" value="${isEdit ? o.opportunity_id : generators.opportunityId()}">
-                  </div>
-                  <div class="col-md-9">
-                    <label class="form-label">Tên cơ hội <span class="text-danger">*</span></label>
-                    <input class="form-control" id="op_name" value="${o?.name || ''}" required>
-                  </div>
-                  <div class="col-md-6 position-relative">
-                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
-                    <input class="form-control" id="op_client" autocomplete="off" value="${customer?.name || ''}" required>
-                    <div id="op_client_sugs" class="suggestions d-none"></div>
-                    <input type="hidden" id="op_client_id" value="${o?.customer_id || ''}">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Giá trị kỳ vọng</label>
-                    <input type="number" class="form-control" id="op_val" value="${o?.expected_value || 0}">
-                  </div>
-                  <div class="col-md-12">
-                    <label class="form-label">Stage</label>
-                    <select class="form-select" id="op_stage">
-                      <option ${o?.stage === 'mới' ? 'selected' : ''}>mới</option>
-                      <option ${o?.stage === 'đánh giá' ? 'selected' : ''}>đánh giá</option>
-                      <option ${o?.stage === 'đàm phán' ? 'selected' : ''}>đàm phán</option>
-                      <option ${o?.stage === 'đã thắng' ? 'selected' : ''}>đã thắng</option>
-                      <option ${o?.stage === 'đã mất' ? 'selected' : ''}>đã mất</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i>Lưu
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('oppFormWrap').classList.add('d-none')">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        `;
-        
-        document.getElementById('oppForm').onsubmit = (e) => {
-          e.preventDefault();
-          handlers.saveOpportunity(id);
-        };
-        
-        const clientInput = document.getElementById('op_client');
-        clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'op_client'), CONFIG.DEBOUNCE_DELAY);
-      },
-      
-      quote(id = '') {
-        const wrap = document.getElementById('quoteFormWrap');
-        const isEdit = !!id;
-        
-        // Check permission for edit
-        if (isEdit && !storage.canEdit('quotes', id)) {
-          utils.showToast('Bạn không có quyền sửa báo giá này', 'error');
-          return;
-        }
-        
-        const q = isEdit ? state.quotes.find(x => x.quotes_id === id) : {};
-        const customer = state.cache.customerMap.get(q?.customer_id);
-        const project = state.cache.projectMap.get(q?.project_id);
-        
-        wrap.classList.remove('d-none');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        wrap.innerHTML = `
-          <div class="card card-shadow mb-4 fade-in">
-            <div class="card-body">
-              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} báo giá</h5>
-              <form id="quoteForm">
-                <div class="row g-3">
-                  <div class="col-md-3">
-                    <label class="form-label">ID</label>
-                    <input class="form-control" disabled id="q_id" value="${isEdit ? q.quotes_id : generators.quoteId()}">
-                  </div>
-                  <div class="col-md-9 position-relative">
-                    <label class="form-label">Khách hàng <span class="text-danger">*</span></label>
-                    <input class="form-control" id="q_client" autocomplete="off" value="${customer?.name || ''}" required>
-                    <div id="q_client_sugs" class="suggestions d-none"></div>
-                    <input type="hidden" id="q_client_id" value="${q?.customer_id || ''}">
-                  </div>
-                  <div class="col-md-6 position-relative">
-                    <label class="form-label">Dự án</label>
-                    <input class="form-control" id="q_project" autocomplete="off" value="${project?.project_name || ''}">
-                    <div id="q_project_sugs" class="suggestions d-none"></div>
-                    <input type="hidden" id="q_project_id" value="${q?.project_id || ''}">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Số tiền</label>
-                    <input type="number" class="form-control" id="q_amount" value="${q?.amount || 0}">
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label">Nội dung</label>
-                    <textarea class="form-control" rows="2" id="q_desc">${q?.description || ''}</textarea>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" id="q_status">
-                      <option ${q?.status === 'nháp' ? 'selected' : ''}>nháp</option>
-                      <option ${q?.status === 'đã gửi' ? 'selected' : ''}>đã gửi</option>
-                      <option ${q?.status === 'chấp nhận' ? 'selected' : ''}>chấp nhận</option>
-                      <option ${q?.status === 'từ chối' ? 'selected' : ''}>từ chối</option>
-                    </select>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Lần gửi</label>
-                    <input type="number" class="form-control" id="q_send" value="${q?.send_count || 0}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">PDF URL</label>
-                    <input class="form-control" id="q_pdf" placeholder="https://...pdf" value="${q?.pdf_url || ''}">
-                  </div>
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i>Lưu báo giá
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('quoteFormWrap').classList.add('d-none')">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        `;
-        
-        document.getElementById('quoteForm').onsubmit = (e) => {
-          e.preventDefault();
-          handlers.saveQuote(id);
-        };
-        
-        const clientInput = document.getElementById('q_client');
-        clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'q_client'), CONFIG.DEBOUNCE_DELAY);
-        
-        const projectInput = document.getElementById('q_project');
-        projectInput.oninput = utils.debounce(() => autocomplete.suggestProject(projectInput.value, 'q_project'), CONFIG.DEBOUNCE_DELAY);
-      },
-      
-      contract(id = '') {
-        const wrap = document.getElementById('contractFormWrap');
-        const isEdit = !!id;
-        
-        // Check permission for edit
-        if (isEdit && !storage.canEdit('contracts', id)) {
-          utils.showToast('Bạn không có quyền sửa hợp đồng này', 'error');
-          return;
-        }
-        
-        const ct = isEdit ? state.contracts.find(x => x.contract_id === id) : {};
-        const project = state.cache.projectMap.get(ct?.project_id);
-        
-        wrap.classList.remove('d-none');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        wrap.innerHTML = `
-          <div class="card card-shadow mb-4 fade-in">
-            <div class="card-body">
-              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} hợp đồng</h5>
-              <form id="contractForm">
-                <div class="row g-3">
-                  <div class="col-md-3">
-                    <label class="form-label">ID</label>
-                    <input class="form-control" disabled id="ct_id" value="${isEdit ? ct.contract_id : generators.contractId()}">
-                  </div>
-                  <div class="col-md-9 position-relative">
-                    <label class="form-label">Dự án <span class="text-danger">*</span></label>
-                    <input class="form-control" id="ct_proj" autocomplete="off" value="${project?.project_name || ''}" required>
-                    <div id="ct_proj_sugs" class="suggestions d-none"></div>
-                    <input type="hidden" id="ct_proj_id" value="${ct?.project_id || ''}">
-                  </div>
-                  <div class="col-md-6 position-relative">
-                    <label class="form-label">Báo giá (tùy chọn)</label>
-                    <input class="form-control" id="ct_quote" autocomplete="off" value="${ct?.quotes_id || ''}">
-                    <div id="ct_quote_sugs" class="suggestions d-none"></div>
-                    <input type="hidden" id="ct_quote_id" value="${ct?.quotes_id || ''}">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Giá trị</label>
-                    <input type="number" class="form-control" id="ct_val" value="${ct?.value || 0}">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Ngày HĐ</label>
-                    <input type="date" class="form-control" id="ct_date" value="${ct?.contract_date || ''}">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Trạng thái</label>
-                    <select class="form-select" id="ct_status">
-                      <option ${ct?.status === 'hiệu lực' ? 'selected' : ''}>hiệu lực</option>
-                      <option ${ct?.status === 'hoàn thành' ? 'selected' : ''}>hoàn thành</option>
-                      <option ${ct?.status === 'hủy' ? 'selected' : ''}>hủy</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i>Lưu
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('contractFormWrap').classList.add('d-none')">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        `;
-        
-        document.getElementById('contractForm').onsubmit = (e) => {
-          e.preventDefault();
-          handlers.saveContract(id);
-        };
-        
-        const projInput = document.getElementById('ct_proj');
-        projInput.oninput = utils.debounce(() => autocomplete.suggestProject(projInput.value, 'ct_proj'), CONFIG.DEBOUNCE_DELAY);
-        
-        const quoteInput = document.getElementById('ct_quote');
-        quoteInput.oninput = utils.debounce(() => autocomplete.suggestQuote(quoteInput.value, 'ct_quote'), CONFIG.DEBOUNCE_DELAY);
-      },
-      
-      user(id = '') {
-        const wrap = document.getElementById('userFormWrap');
-        const isEdit = !!id;
-        const u = isEdit ? state.users.find(x => x.id === id) : {};
-        
-        wrap.classList.remove('d-none');
-        wrap.innerHTML = `
-          <div class="card card-shadow mb-4 fade-in">
-            <div class="card-body">
-              <h5 class="card-title mb-3">${isEdit ? 'Sửa' : 'Thêm'} user</h5>
-              <form id="userForm">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Email <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control" id="us_email" value="${u?.email || ''}" ${isEdit ? 'disabled' : 'required'}>
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">Role</label>
-                    <select class="form-select" id="us_role">
-                      <option value="user" ${u?.role === 'user' ? 'selected' : ''}>user</option>
-                      <option value="admin" ${u?.role === 'admin' ? 'selected' : ''}>admin</option>
-                      <option value="BOM" ${u?.role === 'BOM' ? 'selected' : ''}>BOM</option>
-                    </select>
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">Active</label>
-                    <select class="form-select" id="us_active">
-                      <option value="true" ${u?.active ? 'selected' : ''}>true</option>
-                      <option value="false" ${!u?.active ? 'selected' : ''}>false</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i>Lưu
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('userFormWrap').classList.add('d-none')">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        `;
-        
-        document.getElementById('userForm').onsubmit = (e) => {
-          e.preventDefault();
-          handlers.saveUser(id);
-        };
-      }
-    };
-
-    /* ===== CRUD HANDLERS ===== */
-    const handlers = {
-      async saveCustomer(id) {
-        // Check permission for edit
-        if (id && !storage.canEdit('customers', id)) {
-          utils.showToast('Bạn không có quyền sửa khách hàng này', 'error');
-          return;
-        }
-        
-        const payload = {
-          name: document.getElementById('cust_name').value.trim(),
-          contact_person: document.getElementById('cust_contact').value || null,
-          phone: document.getElementById('cust_phone').value || null,
-          email: document.getElementById('cust_email').value || null,
-          address: document.getElementById('cust_address').value || null,
-          tax_code: document.getElementById('cust_tax').value || null
-        };
-        
-        if (!payload.name) {
-          utils.showToast('Tên khách hàng không được trống', 'error');
-          return;
-        }
-        
-        const btn = document.querySelector('#customerForm button[type="submit"]');
-        const stopLoading = utils.showLoading(btn);
-        
-        let success;
-        if (id) {
-          success = await crud.update('customers', payload, 'id', id);
-        } else {
-          payload.id = document.getElementById('cust_id').value;
-          payload.created_at = new Date().toISOString();
-          success = await crud.create('customers', payload);
-          if (success) {
-            storage.pushMyCustomerId(payload.id);
-            storage.setCreatedBy('customers', payload.id, state.currentUser.email);
-          }
-        }
-        
-        stopLoading();
-        
-        if (success) {
-          renderers.customers();
-          renderers.dashboard();
-          document.getElementById('customerFormWrap').classList.add('d-none');
-        }
-      },
-      
-      async saveProject(id) {
-        // Check permission for edit
-        if (id && !storage.canEdit('projects', id)) {
-          utils.showToast('Bạn không có quyền sửa dự án này', 'error');
-          return;
-        }
-        
-        const payload = {
-          project_name: document.getElementById('pr_name').value.trim(),
-          customer_id: document.getElementById('pr_client_id').value,
-          description: document.getElementById('pr_desc').value || null,
-          start_date: document.getElementById('pr_start').value || null,
-          end_date: document.getElementById('pr_end').value || null,
-          status: document.getElementById('pr_status').value
-        };
-        
-        if (!payload.project_name) {
-          utils.showToast('Tên dự án không được trống', 'error');
-          return;
-        }
-        
-        if (!payload.customer_id) {
-          utils.showToast('Chưa chọn khách hàng hợp lệ', 'error');
-          return;
-        }
-        
-        const btn = document.querySelector('#projectForm button[type="submit"]');
-        const stopLoading = utils.showLoading(btn);
-        
-        let success;
-        if (id) {
-          success = await crud.update('projects', payload, 'project_id', id);
-        } else {
-          payload.project_id = document.getElementById('pr_id').value;
-          payload.created_at = new Date().toISOString();
-          success = await crud.create('projects', payload);
-          if (success) {
-            storage.setCreatedBy('projects', payload.project_id, state.currentUser.email);
-          }
-        }
-        
-        stopLoading();
-        
-        if (success) {
-          renderers.projects();
-          renderers.dashboard();
-          document.getElementById('projectFormWrap').classList.add('d-none');
-        }
-      },
-      
-      async saveOpportunity(id) {
-        // Check permission for edit
-        if (id && !storage.canEdit('opportunities', id)) {
-          utils.showToast('Bạn không có quyền sửa cơ hội này', 'error');
-          return;
-        }
-        
-        const payload = {
-          name: document.getElementById('op_name').value.trim(),
-          customer_id: document.getElementById('op_client_id').value,
-          expected_value: parseInt(document.getElementById('op_val').value || '0', 10),
-          stage: document.getElementById('op_stage').value
-        };
-        
-        if (!payload.name) {
-          utils.showToast('Tên cơ hội không được trống', 'error');
-          return;
-        }
-        
-        if (!payload.customer_id) {
-          utils.showToast('Chưa chọn khách hàng hợp lệ', 'error');
-          return;
-        }
-        
-        const btn = document.querySelector('#oppForm button[type="submit"]');
-        const stopLoading = utils.showLoading(btn);
-        
-        let success;
-        if (id) {
-          success = await crud.update('opportunities', payload, 'opportunity_id', id);
-        } else {
-          payload.opportunity_id = document.getElementById('op_id').value;
-          payload.created_at = new Date().toISOString();
-          success = await crud.create('opportunities', payload);
-          if (success) {
-            storage.setCreatedBy('opportunities', payload.opportunity_id, state.currentUser.email);
-          }
-        }
-        
-        stopLoading();
-        
-        if (success) {
-          renderers.opportunities();
-          renderers.dashboard();
-          document.getElementById('oppFormWrap').classList.add('d-none');
-        }
-      },
-      
-      async saveQuote(id) {
-        // Check permission for edit
-        if (id && !storage.canEdit('quotes', id)) {
-          utils.showToast('Bạn không có quyền sửa báo giá này', 'error');
-          return;
-        }
-        
-        const payload = {
-          customer_id: document.getElementById('q_client_id').value,
-          project_id: document.getElementById('q_project_id').value || null,
-          description: document.getElementById('q_desc').value || null,
-          amount: parseInt(document.getElementById('q_amount').value || '0', 10),
-          status: document.getElementById('q_status').value,
-          send_count: parseInt(document.getElementById('q_send').value || '0', 10),
-          pdf_url: document.getElementById('q_pdf').value || null
-        };
-        
-        if (!payload.customer_id) {
-          utils.showToast('Chưa chọn khách hàng hợp lệ', 'error');
-          return;
-        }
-        
-        const btn = document.querySelector('#quoteForm button[type="submit"]');
-        const stopLoading = utils.showLoading(btn);
-        
-        let success;
-        if (id) {
-          success = await crud.update('quotes', payload, 'quotes_id', id);
-        } else {
-          payload.quotes_id = document.getElementById('q_id').value;
-          payload.created_at = new Date().toISOString();
-          success = await crud.create('quotes', payload);
-          if (success) {
-            storage.setCreatedBy('quotes', payload.quotes_id, state.currentUser.email);
-          }
-        }
-        
-        stopLoading();
-        
-        if (success) {
-          renderers.quotes();
-          document.getElementById('quoteFormWrap').classList.add('d-none');
-        }
-      },
-      
-      async saveContract(id) {
-        // Check permission for edit
-        if (id && !storage.canEdit('contracts', id)) {
-          utils.showToast('Bạn không có quyền sửa hợp đồng này', 'error');
-          return;
-        }
-        
-        const projId = document.getElementById('ct_proj_id').value;
-        const project = state.cache.projectMap.get(projId);
-        
-        const payload = {
-          project_id: projId,
-          customer_id: project?.customer_id,
-          quotes_id: document.getElementById('ct_quote_id').value || null,
-          value: parseInt(document.getElementById('ct_val').value || '0', 10),
-          contract_date: document.getElementById('ct_date').value || null,
-          status: document.getElementById('ct_status').value
-        };
-        
-        if (!payload.project_id) {
-          utils.showToast('Chưa chọn dự án hợp lệ', 'error');
-          return;
-        }
-        
-        const btn = document.querySelector('#contractForm button[type="submit"]');
-        const stopLoading = utils.showLoading(btn);
-        
-        let success;
-        if (id) {
-          success = await crud.update('contracts', payload, 'contract_id', id);
-        } else {
-          payload.contract_id = document.getElementById('ct_id').value;
-          payload.created_at = new Date().toISOString();
-          success = await crud.create('contracts', payload);
-          if (success) {
-            storage.setCreatedBy('contracts', payload.contract_id, state.currentUser.email);
-          }
-        }
-        
-        stopLoading();
-        
-        if (success) {
-          renderers.contracts();
-          document.getElementById('contractFormWrap').classList.add('d-none');
-        }
-      },
-      
-      async saveUser(id) {
-        const payload = {
-          role: document.getElementById('us_role').value,
-          active: document.getElementById('us_active').value === 'true'
-        };
-        
-        if (!id) {
-          payload.email = document.getElementById('us_email').value.trim();
-          if (!payload.email) {
-            utils.showToast('Email không được trống', 'error');
-            return;
-          }
-          payload.created_at = new Date().toISOString();
-        }
-        
-        const btn = document.querySelector('#userForm button[type="submit"]');
-        const stopLoading = utils.showLoading(btn);
-        
-        let success;
-        if (id) {
-          success = await crud.update('user_profiles', payload, 'id', id);
-        } else {
-          success = await crud.create('user_profiles', payload);
-        }
-        
-        stopLoading();
-        
-        if (success) {
-          renderers.users();
-          document.getElementById('userFormWrap').classList.add('d-none');
-        }
-      },
-      
-      async deleteCustomer(id) {
-        if (!storage.canEdit('customers', id)) {
-          utils.showToast('Bạn không có quyền xóa khách hàng này', 'error');
-          return;
-        }
-        if (!confirm('Xóa khách hàng này?')) return;
-        if (await crud.delete('customers', 'id', id)) {
-          renderers.customers();
-          renderers.dashboard();
-        }
-      },
-      
-      async deleteProject(id) {
-        if (!storage.canEdit('projects', id)) {
-          utils.showToast('Bạn không có quyền xóa dự án này', 'error');
-          return;
-        }
-        if (!confirm('Xóa dự án này?')) return;
-        if (await crud.delete('projects', 'project_id', id)) {
-          renderers.projects();
-          renderers.dashboard();
-        }
-      },
-      
-      async deleteOpportunity(id) {
-        if (!storage.canEdit('opportunities', id)) {
-          utils.showToast('Bạn không có quyền xóa cơ hội này', 'error');
-          return;
-        }
-        if (!confirm('Xóa cơ hội này?')) return;
-        if (await crud.delete('opportunities', 'opportunity_id', id)) {
-          renderers.opportunities();
-          renderers.dashboard();
-        }
-      },
-      
-      async deleteQuote(id) {
-        if (!storage.canEdit('quotes', id)) {
-          utils.showToast('Bạn không có quyền xóa báo giá này', 'error');
-          return;
-        }
-        if (!confirm('Xóa báo giá này?')) return;
-        if (await crud.delete('quotes', 'quotes_id', id)) {
-          renderers.quotes();
-        }
-      },
-      
-      async deleteContract(id) {
-        if (!storage.canEdit('contracts', id)) {
-          utils.showToast('Bạn không có quyền xóa hợp đồng này', 'error');
-          return;
-        }
-        if (!confirm('Xóa hợp đồng này?')) return;
-        if (await crud.delete('contracts', 'contract_id', id)) {
-          renderers.contracts();
-        }
-      },
-      
-      async deleteUser(id) {
-        if (!confirm('Xóa user này?')) return;
-        if (await crud.delete('user_profiles', 'id', id)) {
-          renderers.users();
-        }
-      }
-    };
-
-    /* ===== AUTOCOMPLETE ===== */
-    const autocomplete = {
-      activeIndex: -1,
-      
-      navigate(box, direction) {
-        const items = box.querySelectorAll('.suggestion-item');
-        if (!items.length) return;
-        
-        items[this.activeIndex]?.classList.remove('active');
-        
-        if (direction === 'down') {
-          this.activeIndex = (this.activeIndex + 1) % items.length;
-        } else {
-          this.activeIndex = (this.activeIndex - 1 + items.length) % items.length;
-        }
-        
-        items[this.activeIndex]?.classList.add('active');
-        items[this.activeIndex]?.scrollIntoView({ block: 'nearest' });
-      },
-      
-      select(box) {
-        const active = box.querySelector('.suggestion-item.active');
-        if (active) active.click();
-      },
-      
-      suggestExistingCustomer(q) {
-        const box = document.getElementById('cust_name_sugs');
-        box.innerHTML = '';
-        this.activeIndex = -1;
-        
-        if (!q) {
-          box.classList.add('d-none');
-          return;
-        }
-        
-        const list = state.customers.filter(c =>
-          (c.name || '').toLowerCase().includes(q.toLowerCase()) ||
-          (c.id || '').toLowerCase().includes(q.toLowerCase())
-        );
-        
-        if (list.length) {
-          list.forEach(c => {
-            const d = document.createElement('div');
-            d.className = 'suggestion-item';
-            d.textContent = `${c.id} – ${c.name}`;
-            d.onclick = () => {
-              document.getElementById('cust_id').value = c.id;
-              document.getElementById('cust_name').value = c.name;
-              document.getElementById('cust_contact').value = c.contact_person || '';
-              document.getElementById('cust_phone').value = c.phone || '';
-              document.getElementById('cust_email').value = c.email || '';
-              document.getElementById('cust_address').value = c.address || '';
-              document.getElementById('cust_tax').value = c.tax_code || '';
-              box.classList.add('d-none');
-            };
-            box.appendChild(d);
-          });
-        } else {
-          const d = document.createElement('div');
-          d.className = 'suggestion-item text-primary';
-          d.textContent = '+ Tạo khách hàng mới';
-          d.onclick = () => {
-            const newId = generators.customerId();
-            document.getElementById('cust_id').value = newId;
-            document.getElementById('cust_name').value = q;
-            document.getElementById('cust_contact').value = '';
-            document.getElementById('cust_phone').value = '';
-            document.getElementById('cust_email').value = '';
-            document.getElementById('cust_address').value = '';
-            document.getElementById('cust_tax').value = '';
-            box.classList.add('d-none');
-          };
-          box.appendChild(d);
-        }
-        
-        box.classList.remove('d-none');
-      },
-      
-      suggestCustomer(q, fld) {
-        const box = document.getElementById(`${fld}_sugs`);
-        box.innerHTML = '';
-        this.activeIndex = -1;
-        
-        if (!q) {
-          box.classList.add('d-none');
-          return;
-        }
-        
-        const list = state.customers.filter(c =>
-          (c.name || '').toLowerCase().includes(q.toLowerCase()) ||
-          (c.id || '').toLowerCase().includes(q.toLowerCase())
-        );
-        
-        list.forEach(c => {
-          const d = document.createElement('div');
-          d.className = 'suggestion-item';
-          d.textContent = `${c.id} – ${c.name}`;
-          d.onclick = () => {
-            document.getElementById(fld).value = c.name;
-            const hid = document.getElementById(`${fld}_id`);
-            if (hid) hid.value = c.id;
-            box.classList.add('d-none');
-          };
-          box.appendChild(d);
-        });
-        
-        box.classList.remove('d-none');
-      },
-      
-      suggestProject(q, fld) {
-        const box = document.getElementById(`${fld}_sugs`);
-        box.innerHTML = '';
-        this.activeIndex = -1;
-        
-        const custId = document.getElementById(fld === 'q_project' ? 'q_client_id' : 'ct_client_id')?.value;
-        
-        if (fld === 'q_project' && !custId) {
-          box.innerHTML = `<div class="suggestion-item text-danger">Vui lòng chọn Khách hàng trước</div>`;
-          return box.classList.remove('d-none');
-        }
-        
-        let list = state.projects.filter(p =>
-          (p.project_name || '').toLowerCase().includes(q.toLowerCase()) ||
-          (p.project_id || '').toLowerCase().includes(q.toLowerCase())
-        );
-        
-        if (fld === 'q_project' && custId) {
-          list = list.filter(p => p.customer_id === custId);
-        }
-        
-        if (list.length) {
-          list.forEach(p => {
-            const d = document.createElement('div');
-            d.className = 'suggestion-item';
-            d.textContent = `${p.project_id} – ${p.project_name}`;
-            d.onclick = () => {
-              document.getElementById(fld).value = p.project_name;
-              document.getElementById(`${fld}_id`).value = p.project_id;
-              box.classList.add('d-none');
-            };
-            box.appendChild(d);
-          });
-        } else if (fld === 'q_project') {
-          const d = document.createElement('div');
-          d.className = 'suggestion-item text-primary';
-          d.textContent = '+ Thêm dự án mới';
-          d.onclick = () => {
-            box.classList.add('d-none');
-            ui.showSection('projects');
-            crmForms.project();
-            setTimeout(() => {
-              document.getElementById('pr_client_id').value = custId;
-              document.getElementById('pr_client').value = document.getElementById('q_client').value;
-            }, 0);
-          };
-          box.appendChild(d);
-        }
-        
-        box.classList.remove('d-none');
-      },
-      
-      suggestQuote(q, fld) {
-        const box = document.getElementById(`${fld}_sugs`);
-        box.innerHTML = '';
-        this.activeIndex = -1;
-        
-        if (!q) {
-          box.classList.add('d-none');
-          return;
-        }
-        
-        const list = state.quotes.filter(x =>
-          (x.quotes_id || '').toLowerCase().includes(q.toLowerCase())
-        );
-        
-        list.forEach(x => {
-          const d = document.createElement('div');
-          d.className = 'suggestion-item';
-          d.textContent = x.quotes_id;
-          d.onclick = () => {
-            document.getElementById(fld).value = x.quotes_id;
-            const hid = document.getElementById(`${fld}_id`);
-            if (hid) hid.value = x.quotes_id;
-            box.classList.add('d-none');
-          };
-          box.appendChild(d);
-        });
-        
-        box.classList.remove('d-none');
-      }
-    };
-
-    /* ===== AUTH FUNCTIONS ===== */
-    const auth = {
-      showOverlay(msg = '') {
-        const el = document.getElementById('authOverlay');
-        if (msg) document.getElementById('authError').textContent = msg;
-        el.classList.remove('d-none');
-      },
-      
-      hideOverlay() {
-        document.getElementById('authError').textContent = '';
-        document.getElementById('authOverlay').classList.add('d-none');
-      },
-      
-      applyRoleUI() {
-        const isElevated = ['admin', 'BOM'].includes(state.currentUser.role);
-        
-        // Hide services (always)
-        document.getElementById('navServices').style.display = 'none';
-        
-        // Hide based on role
-        const hideForUser = ['projects', 'opportunities'];
-        hideForUser.forEach(pg => {
-          const link = document.querySelector(`#sidebarNav .nav-link[data-page="${pg}"]`);
-          if (link) link.parentElement.style.display = isElevated ? '' : 'none';
-        });
-      },
-      
-      async enforceAuth() {
-        try {
-          const { data: { user } } = await sb.auth.getUser();
-          
-          if (!user) {
-            auth.showOverlay();
-            return;
-          }
-          
-          const { data: profile, error } = await sb.from('user_profiles')
-            .select('role, active')
-            .eq('email', user.email)
-            .single();
-          
-          if (error || !profile || !profile.active) {
-            auth.showOverlay('Email đăng nhập không thuộc hệ thống VSEC; hãy liên hệ admin');
-            await sb.auth.signOut();
-            return;
-          }
-          
-          state.currentUser = {
-            email: user.email,
-            role: profile.role || 'user'
-          };
-          
-          document.getElementById('currentEmail').textContent = state.currentUser.email;
-          auth.hideOverlay();
-          
-          await loadData();
-          auth.applyRoleUI();
-          renderAll();
-          ui.showSection('dashboard');
-          
-        } catch (e) {
-          console.error(e);
-          auth.showOverlay('Không thể xác thực. Vui lòng thử lại.');
-        }
-      }
-    };
-
-    /* ===== RENDER ALL ===== */
-    function renderAll() {
-      renderers.dashboard();
-      renderers.customers();
-      renderers.projects();
-      renderers.opportunities();
-      renderers.quotes();
-      renderers.contracts();
-      renderers.users();
-    }
-
-    /* ===== EVENT LISTENERS ===== */
-    document.addEventListener('DOMContentLoaded', () => {
-      // Sidebar toggle
-      document.getElementById('sidebarToggle').addEventListener('click', () => ui.toggleSidebar());
-      document.getElementById('sidebarBackdrop').addEventListener('click', () => ui.toggleSidebar(false));
-      
-      // Navigation
-      document.querySelectorAll('#sidebarNav .nav-link[data-page]').forEach(a => {
-        a.addEventListener('click', () => ui.showSection(a.dataset.page));
-      });
-      
-      // Add buttons
-      document.getElementById('btnAddCustomer').onclick = () => crmForms.customer();
-      document.getElementById('btnAddProject').onclick = () => crmForms.project();
-      document.getElementById('btnAddOpportunity').onclick = () => crmForms.opportunity();
-      document.getElementById('btnAddQuote').onclick = () => crmForms.quote();
-      document.getElementById('btnAddContract').onclick = () => crmForms.contract();
-      document.getElementById('btnAddUser').onclick = () => crmForms.user();
-      
-      // Auth
-      document.getElementById('btnGoogle').addEventListener('click', () => {
-        sb.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: window.location.href }
-        });
-      });
-      
-      document.getElementById('btnSignOut').onclick = async (e) => {
-        e.preventDefault();
-        await sb.auth.signOut();
-        location.reload();
-      };
-      
-      // Global click handler for closing suggestions
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.suggestions') && !e.target.closest('input')) {
-          document.querySelectorAll('.suggestions').forEach(b => b.classList.add('d-none'));
-        }
-      });
-      
-      // Keyboard navigation for autocomplete
-      document.addEventListener('keydown', (e) => {
-        const activeInput = document.activeElement;
-        if (activeInput.tagName === 'INPUT') {
-          const sugsId = activeInput.id + '_sugs';
-          const box = document.getElementById(sugsId);
-          
-          if (box && !box.classList.contains('d-none')) {
-            if (e.key === 'ArrowDown') {
-              e.preventDefault();
-              autocomplete.navigate(box, 'down');
-            } else if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              autocomplete.navigate(box, 'up');
-            } else if (e.key === 'Enter') {
-              e.preventDefault();
-              autocomplete.select(box);
-            } else if (e.key === 'Escape') {
-              box.classList.add('d-none');
-            }
-          }
-        }
-      });
-      
-      // Auth state change listener
-      sb.auth.onAuthStateChange((_event, _session) => {
-        auth.enforceAuth();
-      });
-      
-      // Initialize
-      auth.enforceAuth();
-    });
-
-    /* ===== GLOBAL FUNCTION EXPORTS ===== */
-    // Export functions to global scope for onclick handlers
-    window.crmForms  = crmForms;   // tên mới
-    window.handlers = handlers;
-    window.autocomplete = autocomplete;
-  </script>
-
-  <!-- Bootstrap 5 JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-</body>
-</html>
