@@ -945,14 +945,19 @@
           const project = state.cache.projectMap.get(ct.project_id);
           const customer = state.cache.customerMap.get(ct.customer_id);
           const canEdit = storage.canEdit('contracts', ct.contract_id);
+          
+          // Truncate long text for display
+          const sowDisplay = ct.sow ? (ct.sow.length > 50 ? ct.sow.substring(0, 50) + '...' : ct.sow) : '';
+          const paymentDisplay = ct.payment ? (ct.payment.length > 50 ? ct.payment.substring(0, 50) + '...' : ct.payment) : '';
+          
           return `
             <tr>
               <td>${ct.contract_id}</td>
               <td class="text-start fw-medium">${project ? project.project_name : ct.project_id}</td>
               <td class="d-none d-md-table-cell">${customer ? customer.name : ct.customer_id}</td>
               <td>${utils.money(ct.value)}</td>
-              <td class="d-none d-lg-table-cell">${ct.sow_status || ''}</td>
-              <td class="d-none d-xl-table-cell">${ct.payment_status || ''}</td>
+              <td class="d-none d-lg-table-cell small" title="${ct.sow || ''}">${sowDisplay}</td>
+              <td class="d-none d-xl-table-cell small" title="${ct.payment || ''}">${paymentDisplay}</td>
               <td><span class="badge bg-success">${ct.status || ''}</span></td>
               <td>
                 <div class="btn-group btn-group-sm">
@@ -1383,25 +1388,12 @@
                     </select>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">SOW Status</label>
-                    <select class="form-select" id="ct_sow">
-                      <option value="" ${!ct?.sow_status ? 'selected' : ''}>-- Chọn --</option>
-                      <option ${ct?.sow_status === 'Chưa có' ? 'selected' : ''}>Chưa có</option>
-                      <option ${ct?.sow_status === 'Đang soạn' ? 'selected' : ''}>Đang soạn</option>
-                      <option ${ct?.sow_status === 'Đã gửi' ? 'selected' : ''}>Đã gửi</option>
-                      <option ${ct?.sow_status === 'Đã ký' ? 'selected' : ''}>Đã ký</option>
-                    </select>
+                    <label class="form-label">SOW (Scope of Work)</label>
+                    <textarea class="form-control" rows="2" id="ct_sow" placeholder="Mô tả phạm vi công việc...">${ct?.sow || ''}</textarea>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Payment Status</label>
-                    <select class="form-select" id="ct_payment">
-                      <option value="" ${!ct?.payment_status ? 'selected' : ''}>-- Chọn --</option>
-                      <option ${ct?.payment_status === 'Chưa TT' ? 'selected' : ''}>Chưa TT</option>
-                      <option ${ct?.payment_status === 'TT 30%' ? 'selected' : ''}>TT 30%</option>
-                      <option ${ct?.payment_status === 'TT 50%' ? 'selected' : ''}>TT 50%</option>
-                      <option ${ct?.payment_status === 'TT 70%' ? 'selected' : ''}>TT 70%</option>
-                      <option ${ct?.payment_status === 'TT 100%' ? 'selected' : ''}>TT 100%</option>
-                    </select>
+                    <label class="form-label">Payment Terms</label>
+                    <textarea class="form-control" rows="2" id="ct_payment" placeholder="Điều khoản thanh toán...">${ct?.payment || ''}</textarea>
                   </div>
                 </div>
                 <div class="mt-3 d-flex gap-2">
@@ -1691,8 +1683,8 @@
           value: utils.parseMoney(document.getElementById('ct_val').value),
           contract_date: document.getElementById('ct_date').value || null,
           status: document.getElementById('ct_status').value,
-          sow_status: document.getElementById('ct_sow').value || null,
-          payment_status: document.getElementById('ct_payment').value || null
+          sow: document.getElementById('ct_sow').value || null,
+          payment: document.getElementById('ct_payment').value || null
         };
         
         if (!payload.project_id) {
