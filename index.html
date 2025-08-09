@@ -2,14 +2,12 @@
 <html lang="vi">
 <head>
   <!-- =========================================================
-       CRM Bootstrap Full – Improved Version
+       CRM Bootstrap Full – Improved Version 2.0
        Improvements:
-       - Better mobile responsive
-       - Performance optimization with caching
-       - DRY principle applied
-       - Debounced search
-       - Loading states
-       - Better error handling
+       - Fixed Google Auth with RLS enabled
+       - Added thousand separators for money inputs
+       - Added SOW and Payment columns to contracts
+       - Better error handling and user experience
        ========================================================= -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -252,6 +250,15 @@
     .sidebar-backdrop.show {
       display: block;
     }
+    
+    /* Money input styles */
+    .money-input {
+      text-align: right;
+    }
+    
+    .input-group-text {
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -279,11 +286,15 @@
       <div class="card-body text-center p-4">
         <div class="mb-3"><i class="bi bi-shield-lock" style="font-size:2.5rem;"></i></div>
         <h5 class="fw-bold mb-2">Đăng nhập VSEC CRM</h5>
-        <p class="text-muted small mb-4">Chỉ chấp nhận email nằm trong bảng <code>user_profiles</code> và <code>active = true</code>.</p>
+        <p class="text-muted small mb-4">Sử dụng tài khoản Google để đăng nhập hệ thống CRM.</p>
         <button id="btnGoogle" class="btn btn-dark w-100 mb-2">
           <i class="bi bi-google me-2"></i>Đăng nhập với Google
         </button>
         <div id="authError" class="text-danger small mt-2"></div>
+        <div id="authLoading" class="d-none mt-3">
+          <div class="loading mx-auto"></div>
+          <p class="text-muted small mt-2">Đang xử lý...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -418,7 +429,18 @@
         <div id="contractFormWrap" class="d-none"></div>
         <div class="card card-shadow"><div class="card-body p-0 table-responsive">
           <table class="table table-hover align-middle mb-0">
-            <thead class="table-light"><tr><th>ID</th><th>Dự án</th><th class="d-none d-md-table-cell">Khách hàng</th><th>Giá trị</th><th>Status</th><th style="width:100px;">Actions</th></tr></thead>
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Dự án</th>
+                <th class="d-none d-md-table-cell">Khách hàng</th>
+                <th>Giá trị</th>
+                <th class="d-none d-lg-table-cell">SOW</th>
+                <th class="d-none d-xl-table-cell">Payment</th>
+                <th>Status</th>
+                <th style="width:100px;">Actions</th>
+              </tr>
+            </thead>
             <tbody id="contractTbody"></tbody>
           </table>
         </div></div>
@@ -457,7 +479,7 @@
 
     /* ===== APPLICATION STATE ===== */
     const state = {
-      currentUser: { email: null, role: 'user' },
+      currentUser: { email: null, role: 'user', userId: null },
       customers: [],
       services: [],
       projects: [],
@@ -484,6 +506,18 @@
       },
       
       money: (n) => (n || 0).toLocaleString('vi-VN'),
+      
+      formatMoney(value) {
+        // Remove non-digits
+        const cleanValue = value.replace(/\D/g, '');
+        // Add thousand separators
+        return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      },
+      
+      parseMoney(value) {
+        // Remove thousand separators and parse
+        return parseInt(value.replace(/,/g, '') || '0', 10);
+      },
       
       debounce(func, wait) {
         let timeout;
@@ -681,6 +715,18 @@
         document.getElementById('kpiOpportunities').textContent = state.opportunities.length;
         const totalValue = state.opportunities.reduce((sum, o) => sum + (o.expected_value || 0), 0);
         document.getElementById('kpiOppValue').textContent = utils.money(totalValue) + ' đ';
+      },
+      
+      attachMoneyFormatters() {
+        document.querySelectorAll('.money-input').forEach(input => {
+          input.addEventListener('input', (e) => {
+            const pos = e.target.selectionStart;
+            const oldLen = e.target.value.length;
+            e.target.value = utils.formatMoney(e.target.value);
+            const newLen = e.target.value.length;
+            e.target.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen));
+          });
+        });
       }
     };
 
@@ -905,6 +951,8 @@
               <td class="text-start fw-medium">${project ? project.project_name : ct.project_id}</td>
               <td class="d-none d-md-table-cell">${customer ? customer.name : ct.customer_id}</td>
               <td>${utils.money(ct.value)}</td>
+              <td class="d-none d-lg-table-cell">${ct.sow_status || ''}</td>
+              <td class="d-none d-xl-table-cell">${ct.payment_status || ''}</td>
               <td><span class="badge bg-success">${ct.status || ''}</span></td>
               <td>
                 <div class="btn-group btn-group-sm">
@@ -1142,7 +1190,10 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Giá trị kỳ vọng</label>
-                    <input type="number" class="form-control" id="op_val" value="${o?.expected_value || 0}">
+                    <div class="input-group">
+                      <input type="text" class="form-control money-input" id="op_val" value="${utils.formatMoney(String(o?.expected_value || 0))}">
+                      <span class="input-group-text">VND</span>
+                    </div>
                   </div>
                   <div class="col-md-12">
                     <label class="form-label">Stage</label>
@@ -1175,6 +1226,8 @@
         
         const clientInput = document.getElementById('op_client');
         clientInput.oninput = utils.debounce(() => autocomplete.suggestCustomer(clientInput.value, 'op_client'), CONFIG.DEBOUNCE_DELAY);
+        
+        ui.attachMoneyFormatters();
       },
       
       quote(id = '') {
@@ -1218,7 +1271,10 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Số tiền</label>
-                    <input type="number" class="form-control" id="q_amount" value="${q?.amount || 0}">
+                    <div class="input-group">
+                      <input type="text" class="form-control money-input" id="q_amount" value="${utils.formatMoney(String(q?.amount || 0))}">
+                      <span class="input-group-text">VND</span>
+                    </div>
                   </div>
                   <div class="col-12">
                     <label class="form-label">Nội dung</label>
@@ -1265,6 +1321,8 @@
         
         const projectInput = document.getElementById('q_project');
         projectInput.oninput = utils.debounce(() => autocomplete.suggestProject(projectInput.value, 'q_project'), CONFIG.DEBOUNCE_DELAY);
+        
+        ui.attachMoneyFormatters();
       },
       
       contract(id = '') {
@@ -1307,7 +1365,10 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Giá trị</label>
-                    <input type="number" class="form-control" id="ct_val" value="${ct?.value || 0}">
+                    <div class="input-group">
+                      <input type="text" class="form-control money-input" id="ct_val" value="${utils.formatMoney(String(ct?.value || 0))}">
+                      <span class="input-group-text">VND</span>
+                    </div>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Ngày HĐ</label>
@@ -1319,6 +1380,27 @@
                       <option ${ct?.status === 'hiệu lực' ? 'selected' : ''}>hiệu lực</option>
                       <option ${ct?.status === 'hoàn thành' ? 'selected' : ''}>hoàn thành</option>
                       <option ${ct?.status === 'hủy' ? 'selected' : ''}>hủy</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">SOW Status</label>
+                    <select class="form-select" id="ct_sow">
+                      <option value="" ${!ct?.sow_status ? 'selected' : ''}>-- Chọn --</option>
+                      <option ${ct?.sow_status === 'Chưa có' ? 'selected' : ''}>Chưa có</option>
+                      <option ${ct?.sow_status === 'Đang soạn' ? 'selected' : ''}>Đang soạn</option>
+                      <option ${ct?.sow_status === 'Đã gửi' ? 'selected' : ''}>Đã gửi</option>
+                      <option ${ct?.sow_status === 'Đã ký' ? 'selected' : ''}>Đã ký</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Payment Status</label>
+                    <select class="form-select" id="ct_payment">
+                      <option value="" ${!ct?.payment_status ? 'selected' : ''}>-- Chọn --</option>
+                      <option ${ct?.payment_status === 'Chưa TT' ? 'selected' : ''}>Chưa TT</option>
+                      <option ${ct?.payment_status === 'TT 30%' ? 'selected' : ''}>TT 30%</option>
+                      <option ${ct?.payment_status === 'TT 50%' ? 'selected' : ''}>TT 50%</option>
+                      <option ${ct?.payment_status === 'TT 70%' ? 'selected' : ''}>TT 70%</option>
+                      <option ${ct?.payment_status === 'TT 100%' ? 'selected' : ''}>TT 100%</option>
                     </select>
                   </div>
                 </div>
@@ -1345,6 +1427,8 @@
         
         const quoteInput = document.getElementById('ct_quote');
         quoteInput.oninput = utils.debounce(() => autocomplete.suggestQuote(quoteInput.value, 'ct_quote'), CONFIG.DEBOUNCE_DELAY);
+        
+        ui.attachMoneyFormatters();
       },
       
       user(id = '') {
@@ -1507,7 +1591,7 @@
         const payload = {
           name: document.getElementById('op_name').value.trim(),
           customer_id: document.getElementById('op_client_id').value,
-          expected_value: parseInt(document.getElementById('op_val').value || '0', 10),
+          expected_value: utils.parseMoney(document.getElementById('op_val').value),
           stage: document.getElementById('op_stage').value
         };
         
@@ -1556,7 +1640,7 @@
           customer_id: document.getElementById('q_client_id').value,
           project_id: document.getElementById('q_project_id').value || null,
           description: document.getElementById('q_desc').value || null,
-          amount: parseInt(document.getElementById('q_amount').value || '0', 10),
+          amount: utils.parseMoney(document.getElementById('q_amount').value),
           status: document.getElementById('q_status').value,
           send_count: parseInt(document.getElementById('q_send').value || '0', 10),
           pdf_url: document.getElementById('q_pdf').value || null
@@ -1604,9 +1688,11 @@
           project_id: projId,
           customer_id: project?.customer_id,
           quotes_id: document.getElementById('ct_quote_id').value || null,
-          value: parseInt(document.getElementById('ct_val').value || '0', 10),
+          value: utils.parseMoney(document.getElementById('ct_val').value),
           contract_date: document.getElementById('ct_date').value || null,
-          status: document.getElementById('ct_status').value
+          status: document.getElementById('ct_status').value,
+          sow_status: document.getElementById('ct_sow').value || null,
+          payment_status: document.getElementById('ct_payment').value || null
         };
         
         if (!payload.project_id) {
@@ -1933,12 +2019,20 @@
       showOverlay(msg = '') {
         const el = document.getElementById('authOverlay');
         if (msg) document.getElementById('authError').textContent = msg;
+        document.getElementById('authLoading').classList.add('d-none');
+        document.getElementById('btnGoogle').disabled = false;
         el.classList.remove('d-none');
       },
       
       hideOverlay() {
         document.getElementById('authError').textContent = '';
         document.getElementById('authOverlay').classList.add('d-none');
+      },
+      
+      showAuthLoading() {
+        document.getElementById('authLoading').classList.remove('d-none');
+        document.getElementById('btnGoogle').disabled = true;
+        document.getElementById('authError').textContent = '';
       },
       
       applyRoleUI() {
@@ -1955,6 +2049,30 @@
         });
       },
       
+      async createUserProfile(email, userId) {
+        try {
+          // Use service role client or admin API to create user profile
+          // For now, we'll create with default 'user' role
+          const { error } = await sb.from('user_profiles')
+            .insert([{
+              email: email,
+              role: 'user',
+              active: false, // Start as inactive, admin must activate
+              created_at: new Date().toISOString(),
+              user_id: userId
+            }]);
+          
+          if (error && error.code !== '23505') { // Ignore duplicate key error
+            throw error;
+          }
+          
+          return true;
+        } catch (error) {
+          console.error('Error creating user profile:', error);
+          return false;
+        }
+      },
+      
       async enforceAuth() {
         try {
           const { data: { user } } = await sb.auth.getUser();
@@ -1964,20 +2082,46 @@
             return;
           }
           
-          const { data: profile, error } = await sb.from('user_profiles')
+          // Show loading while checking profile
+          auth.showAuthLoading();
+          
+          // Try to get user profile
+          let { data: profile, error } = await sb.from('user_profiles')
             .select('role, active')
             .eq('email', user.email)
             .single();
           
-          if (error || !profile || !profile.active) {
-            auth.showOverlay('Email đăng nhập không thuộc hệ thống VSEC; hãy liên hệ admin');
-            await sb.auth.signOut();
+          // If no profile exists, create one
+          if (error && error.code === 'PGRST116') { // No rows returned
+            console.log('Creating new user profile for:', user.email);
+            const created = await auth.createUserProfile(user.email, user.id);
+            
+            if (created) {
+              // Re-fetch the profile
+              const result = await sb.from('user_profiles')
+                .select('role, active')
+                .eq('email', user.email)
+                .single();
+              
+              profile = result.data;
+              error = result.error;
+            }
+          }
+          
+          // Check if user is active
+          if (!profile || !profile.active) {
+            auth.showOverlay('Tài khoản chưa được kích hoạt. Vui lòng liên hệ admin để được cấp quyền truy cập.');
+            // Don't sign out immediately - let user see the message
+            setTimeout(async () => {
+              await sb.auth.signOut();
+            }, 5000);
             return;
           }
           
           state.currentUser = {
             email: user.email,
-            role: profile.role || 'user'
+            role: profile.role || 'user',
+            userId: user.id
           };
           
           document.getElementById('currentEmail').textContent = state.currentUser.email;
@@ -1989,8 +2133,31 @@
           ui.showSection('dashboard');
           
         } catch (e) {
-          console.error(e);
-          auth.showOverlay('Không thể xác thực. Vui lòng thử lại.');
+          console.error('Auth error:', e);
+          auth.showOverlay('Lỗi xác thực. Vui lòng thử lại.');
+        }
+      },
+      
+      async handleGoogleSignIn() {
+        try {
+          auth.showAuthLoading();
+          
+          const { error } = await sb.auth.signInWithOAuth({
+            provider: 'google',
+            options: { 
+              redirectTo: window.location.href,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent'
+              }
+            }
+          });
+          
+          if (error) throw error;
+          
+        } catch (error) {
+          console.error('Google sign-in error:', error);
+          auth.showOverlay('Lỗi đăng nhập với Google. Vui lòng thử lại.');
         }
       }
     };
@@ -2027,10 +2194,7 @@
       
       // Auth
       document.getElementById('btnGoogle').addEventListener('click', () => {
-        sb.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: window.location.href }
-        });
+        auth.handleGoogleSignIn();
       });
       
       document.getElementById('btnSignOut').onclick = async (e) => {
@@ -2071,8 +2235,12 @@
       });
       
       // Auth state change listener
-      sb.auth.onAuthStateChange((_event, _session) => {
-        auth.enforceAuth();
+      sb.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN') {
+          auth.enforceAuth();
+        } else if (event === 'SIGNED_OUT') {
+          auth.showOverlay();
+        }
       });
       
       // Initialize
@@ -2081,7 +2249,7 @@
 
     /* ===== GLOBAL FUNCTION EXPORTS ===== */
     // Export functions to global scope for onclick handlers
-    window.crmForms  = crmForms;   // tên mới
+    window.crmForms = crmForms;
     window.handlers = handlers;
     window.autocomplete = autocomplete;
   </script>
